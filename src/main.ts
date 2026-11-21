@@ -6,7 +6,6 @@ interface ChatMessage {
   timestamp: string;
 }
 
-// LocalStorage Keys
 const STORAGE_USER_KEY = "whatson_username";
 const STORAGE_CHATS_KEY = "whatson_dm_history";
 
@@ -17,12 +16,10 @@ let activeConn: DataConnection | null = null;
 let activeCall: MediaConnection | null = null;
 let localStream: MediaStream | null = null;
 
-// Load saved DM histories: { "friend-id": [ChatMessage, ...] }
 let dmHistory: Record<string, ChatMessage[]> = JSON.parse(
   localStorage.getItem(STORAGE_CHATS_KEY) || "{}"
 );
 
-// DOM Elements
 const usernameInput = document.getElementById("username-input") as HTMLInputElement;
 const saveUserBtn = document.getElementById("save-user-btn") as HTMLButtonElement;
 const myStatusBadge = document.getElementById("my-status-badge") as HTMLElement;
@@ -44,12 +41,10 @@ const localVideo = document.getElementById("local-video") as HTMLVideoElement;
 const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
 const endCallBtn = document.getElementById("end-call-btn") as HTMLButtonElement;
 
-// Clean username format (PeerJS allows letters, numbers, hyphens, underscores)
 function sanitizeUsername(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
 }
 
-// Initialize or switch PeerJS username
 function initPeer(requestedId: string) {
   const cleanId = sanitizeUsername(requestedId);
   if (!cleanId) {
@@ -57,7 +52,6 @@ function initPeer(requestedId: string) {
     return;
   }
 
-  // Destroy previous peer connection if editing username
   if (peer) {
     peer.destroy();
   }
@@ -76,10 +70,9 @@ function initPeer(requestedId: string) {
     myStatusBadge.className = "badge online";
   });
 
-  // Alert if another active user already holds this username!
   newPeer.on("error", (err) => {
     if (err.type === "unavailable-id") {
-      alert(`⚠️ The username "${cleanId}" is currently taken! Please choose another one.`);
+      alert('The username "' + cleanId + '" is currently taken! Please choose another one.');
       myStatusBadge.textContent = "ID Taken";
       myStatusBadge.className = "badge offline";
       usernameInput.focus();
@@ -91,13 +84,11 @@ function initPeer(requestedId: string) {
     }
   });
 
-  // Incoming DM connection
   newPeer.on("connection", (conn) => {
     ensureContactExists(conn.peer);
     setupDataConnection(conn);
   });
 
-  // Incoming Video Call
   newPeer.on("call", async (call) => {
     localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
     localVideo.srcObject = localStream;
@@ -107,7 +98,6 @@ function initPeer(requestedId: string) {
   });
 }
 
-// Claim / Edit Username Button
 saveUserBtn.addEventListener("click", () => {
   initPeer(usernameInput.value);
 });
@@ -116,10 +106,11 @@ copyBtn.addEventListener("click", () => {
   if (!myUsername) return;
   navigator.clipboard.writeText(myUsername);
   copyBtn.textContent = "Copied!";
-  setTimeout(() => (copyBtn.textContent = "Copy ID"), 1500);
+  setTimeout(() => {
+    copyBtn.textContent = "Copy ID";
+  }, 1500);
 });
 
-// Start New DM
 connectBtn.addEventListener("click", () => {
   const targetId = sanitizeUsername(peerIdInput.value);
   if (!targetId || !peer) return;
@@ -137,7 +128,6 @@ reconnectBtn.addEventListener("click", () => {
   }
 });
 
-// Open a DM thread (loads history + connects P2P)
 function openChatWithPeer(targetId: string) {
   currentChatPeer = targetId;
   ensureContactExists(targetId);
@@ -154,7 +144,6 @@ function openChatWithPeer(targetId: string) {
 }
 
 function setupDataConnection(conn: DataConnection) {
-  // If we aren't currently viewing this friend, switch or notify
   if (!currentChatPeer) {
     currentChatPeer = conn.peer;
   }
@@ -191,7 +180,6 @@ function setupDataConnection(conn: DataConnection) {
   });
 }
 
-// Send Message
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const text = messageInput.value.trim();
@@ -204,7 +192,6 @@ chatForm.addEventListener("submit", (e) => {
   messageInput.value = "";
 });
 
-// History & Contact Helpers
 function ensureContactExists(peerId: string) {
   if (!dmHistory[peerId]) {
     dmHistory[peerId] = [];
@@ -214,7 +201,7 @@ function ensureContactExists(peerId: string) {
 
 function saveMessage(peerId: string, sender: "sent" | "received", text: string) {
   ensureContactExists(peerId);
-  dmHistory[peerId].push({ sender, text, timestamp: getTimeNow() });
+  dmHistory[peerId].push({ sender: sender, text: text, timestamp: getTimeNow() });
   localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(dmHistory));
 }
 
@@ -222,7 +209,10 @@ function renderChatHistory(peerId: string) {
   messagesDiv.innerHTML = "";
   const history = dmHistory[peerId] || [];
   if (history.length === 0) {
-    messagesDiv.innerHTML = `<div class="welcome-note">Start of your encrypted DM with <strong>${peerId}</strong></div>`;
+    messagesDiv.innerHTML =
+      '<div class="welcome-note">Start of your encrypted DM with <strong>' +
+      escapeHtml(peerId) +
+      "</strong></div>";
     return;
   }
   history.forEach((msg) => appendMessageBubble(msg.sender, msg.text, msg.timestamp));
@@ -233,8 +223,9 @@ function appendMessageBubble(sender: "sent" | "received", text: string, time: st
   if (welcome) welcome.remove();
 
   const bubble = document.createElement("div");
-  bubble.className = `msg ${sender}`;
-  bubble.innerHTML = `<span>${escapeHtml(text)}</span><span class="msg-time">${time}</span>`;
+  bubble.className = "msg " + sender;
+  bubble.innerHTML =
+    "<span>" + escapeHtml(text) + '</span><span class="msg-time">' + time + "</span>";
   messagesDiv.appendChild(bubble);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
@@ -246,13 +237,13 @@ function renderContactList() {
     const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1].text : "No messages yet";
 
     const li = document.createElement("li");
-    li.className = `contact-item ${currentChatPeer === peerId ? "active" : ""}`;
-    li.innerHTML = `
-      <div>
-        <div class="contact-name">🌊 ${peerId}</div>
-        <div class="contact-preview">${escapeHtml(lastMsg)}</div>
-      </div>
-    `;
+    li.className = "contact-item" + (currentChatPeer === peerId ? " active" : "");
+    li.innerHTML =
+      '<div><div class="contact-name">🌊 ' +
+      escapeHtml(peerId) +
+      '</div><div class="contact-preview">' +
+      escapeHtml(lastMsg) +
+      "</div></div>";
     li.addEventListener("click", () => openChatWithPeer(peerId));
     contactList.appendChild(li);
   });
@@ -268,7 +259,6 @@ function escapeHtml(str: string): string {
   return div.innerHTML;
 }
 
-// Video Calling
 videoCallBtn.addEventListener("click", async () => {
   if (!activeConn || !peer) return;
   localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -295,13 +285,12 @@ function stopCall() {
   videoGrid.classList.add("hidden");
 }
 
-// Boot Up: Restore saved username or prompt a default one
 renderContactList();
 if (myUsername) {
   usernameInput.value = myUsername;
   initPeer(myUsername);
 } else {
-const starterName = wave-${Math.floor(1000 + Math.random() * 9000)}; 
-usernameInput.value = starterName; 
-initPeer(starterName); 
+  const starterName = "wave-" + Math.floor(1000 + Math.random() * 9000);
+  usernameInput.value = starterName;
+  initPeer(starterName);
 }
