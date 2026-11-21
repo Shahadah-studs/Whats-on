@@ -29,12 +29,12 @@ body {
 
 .app-shell {
   width: 95vw;
-  max-width: 1100px;
+  max-width: 1120px;
   height: 90vh;
   background: var(--white);
   border-radius: 16px;
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 330px 1fr;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(0, 35, 60, 0.3);
 }
@@ -45,8 +45,9 @@ body {
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding: 20px;
-  gap: 20px;
+  padding: 18px;
+  gap: 14px;
+  overflow-y: auto;
 }
 
 .brand-header {
@@ -65,17 +66,17 @@ body {
 
 .connection-card {
   background: var(--white);
-  padding: 16px;
+  padding: 14px;
   border-radius: 12px;
   border: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
-.connection-card label {
-  font-size: 0.78rem;
-  font-weight: 600;
+.connection-card label, .contacts-section label {
+  font-size: 0.75rem;
+  font-weight: 700;
   color: var(--ocean-deep);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -84,6 +85,37 @@ body {
 .id-row {
   display: flex;
   gap: 6px;
+}
+
+.id-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 99px;
+}
+
+.badge.online {
+  background: var(--mint-soft);
+  color: #065f46;
+}
+
+.badge.offline {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.link-btn {
+  background: none;
+  color: var(--ocean-mid);
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  text-decoration: underline;
 }
 
 input[type="text"] {
@@ -100,7 +132,7 @@ input[type="text"]:focus {
 }
 
 button {
-  padding: 8px 14px;
+  padding: 8px 12px;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -108,6 +140,7 @@ button {
   background: var(--ocean-light);
   color: var(--ocean-deep);
   transition: 0.2s ease;
+  white-space: nowrap;
 }
 
 button:hover:not(:disabled) {
@@ -124,14 +157,52 @@ button:disabled {
   color: var(--white);
 }
 
-.status-banner {
-  margin-top: auto;
+/* Saved Contacts List */
+.contacts-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.contact-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contact-item {
+  background: var(--white);
+  border: 1px solid var(--border-color);
   padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: 0.15s ease;
+}
+
+.contact-item:hover, .contact-item.active {
+  border-color: var(--mint-green);
   background: var(--ocean-light);
+}
+
+.contact-name {
+  font-weight: 600;
   color: var(--ocean-deep);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  text-align: center;
+  font-size: 0.9rem;
+}
+
+.contact-preview {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Chat Area */
@@ -173,8 +244,17 @@ button:disabled {
 }
 
 .peer-info small {
-  color: var(--mint-green);
+  color: var(--text-muted);
   font-weight: 600;
+}
+
+.call-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hidden {
+  display: none !important;
 }
 
 /* Messages */
@@ -184,7 +264,7 @@ button:disabled {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   background-color: #f9fcfe;
 }
 
@@ -192,7 +272,7 @@ button:disabled {
   margin: auto;
   background: var(--ocean-light);
   color: var(--ocean-deep);
-  padding: 12px 18px;
+  padding: 14px 20px;
   border-radius: 12px;
   font-size: 0.9rem;
   text-align: center;
@@ -205,6 +285,15 @@ button:disabled {
   font-size: 0.95rem;
   line-height: 1.4;
   word-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.msg-time {
+  font-size: 0.7rem;
+  opacity: 0.75;
+  align-self: flex-end;
 }
 
 .msg.sent {
@@ -239,10 +328,6 @@ button:disabled {
   align-items: center;
   justify-content: center;
   z-index: 10;
-}
-
-.video-grid.hidden {
-  display: none;
 }
 
 #remote-video {
