@@ -40,7 +40,10 @@
             <div class="logo-dot"></div>
             <h1>What'sOn</h1>
           </div>
-          <button id="sound-toggle-btn" class="icon-pill" title="Toggle Notification Sound">🔔</button>
+          <div class="brand-right">
+            <a href="./about.html" class="about-link" title="About What'sOn">About</a>
+            <button id="sound-toggle-btn" class="icon-btn" title="Toggle Notification Sound">🔔</button>
+          </div>
         </header>
 
         <!-- Custom Username Card -->
@@ -56,12 +59,24 @@
           </div>
         </div>
 
-        <!-- Start New DM -->
+        <!-- Start New 1-on-1 DM -->
         <div class="connection-card">
           <label for="peer-id-input">New Direct Message</label>
           <div class="id-row">
             <input type="text" id="peer-id-input" placeholder="Friend's username..." />
             <button id="connect-btn" class="primary-btn">Chat</button>
+          </div>
+        </div>
+
+        <!-- Wavers Multi-User Group Rooms -->
+        <div class="connection-card waver-card">
+          <label for="waver-room-input">🌊 Wavers (Group Rooms)</label>
+          <div class="id-row">
+            <input type="text" id="waver-room-input" placeholder="Room name (e.g. reef)..." />
+          </div>
+          <div class="waver-btn-row">
+            <button id="host-waver-btn" class="primary-btn">+ Host Room</button>
+            <button id="join-waver-btn" class="secondary-btn">Join Room</button>
           </div>
         </div>
 
@@ -76,25 +91,27 @@
       <main class="chat-area">
         <header class="chat-header">
           <div class="peer-info">
-            <button id="mobile-back-btn" class="mobile-back-btn" title="Back to DMs">←</button>
-            <span class="avatar">🌊</span>
-            <div class="peer-meta">
+            <button id="mobile-back-btn" class="mobile-back-btn" title="Back to Chats">←</button>
+            <span id="chat-avatar" class="avatar">🌊</span>
+            <div class="peer-title-wrap">
               <h2 id="active-peer-name">No Active Chat</h2>
-              <small id="active-peer-status">Select a DM or enter a username</small>
+              <small id="active-peer-status">Select a DM or join a Waver</small>
             </div>
           </div>
           <div class="call-actions">
+            <button id="copy-room-btn" class="icon-btn hidden" title="Copy Room Code">📋 Copy Code</button>
+            <button id="leave-waver-btn" class="danger-btn hidden" title="Leave Waver">Leave</button>
             <button id="reconnect-btn" class="icon-btn hidden">🔄</button>
-            <label class="header-toggle" title="Start call with Camera">
+            <label id="cam-toggle-wrap" class="header-toggle" title="Start call with Camera">
               <input type="checkbox" id="start-cam-toggle" checked />
               <span>📷</span>
             </label>
-            <label class="header-toggle" title="Start call with Mic">
+            <label id="mic-toggle-wrap" class="header-toggle" title="Start call with Mic">
               <input type="checkbox" id="start-mic-toggle" checked />
               <span>🎤</span>
             </label>
             <button id="video-call-btn" class="icon-btn" disabled>📹 Call</button>
-            <button id="delete-dm-btn" class="danger-btn hidden" title="Delete this DM">🗑️</button>
+            <button id="delete-dm-btn" class="danger-btn hidden" title="Delete this DM history">🗑️ Delete</button>
           </div>
         </header>
 
@@ -103,7 +120,6 @@
           <video id="remote-video" autoplay playsinline></video>
           <video id="local-video" autoplay muted playsinline></video>
 
-          <!-- In-Call Media Controls -->
           <div class="in-call-controls">
             <button id="toggle-mic-live-btn" class="control-btn">🎤 Mic On</button>
             <button id="toggle-cam-live-btn" class="control-btn">📷 Cam On</button>
@@ -114,14 +130,14 @@
         <!-- Messages -->
         <div id="messages" class="messages-container">
           <div class="welcome-note">
-            Claim a permanent <strong>Username</strong> on the left so friends can message or send files to you anytime!
+            Claim a permanent <strong>Username</strong> on the left to start a 1-on-1 DM or host a <strong>Waver</strong> group chat!
           </div>
         </div>
 
         <!-- Input Bar -->
         <form id="chat-form" class="input-bar">
           <input type="file" id="file-input" class="hidden" />
-          <button type="button" id="attach-btn" class="attach-btn" title="Send Image or File (Max 10MB)" disabled>📎</button>
+          <button type="button" id="attach-btn" class="icon-btn" title="Send Image or File" disabled>📎</button>
           <input
             type="text"
             id="message-input"
