@@ -1,133 +1,193 @@
-import Peer, { DataConnection, MediaConnection } from "peerjs";
-
-interface ChatMessage {
-  id: string;
-  sender: "sent" | "received";
-  kind: "text" | "image" | "file";
-  text: string;
-  fileData?: string;
-  fileName?: string;
-  timestamp: string;
-  status?: "sent" | "delivered" | "read";
-}
-
-interface WirePacket {
-  type: "chat" | "file" | "typing" | "ack" | "read";
-  msgId?: string;
-  text?: string;
-  fileData?: string;
-  fileName?: string;
-  mimeType?: string;
-  isTyping?: boolean;
-}
+import Peer, { DataConnection } from "peerjs";
+import { CallManager } from "./calls";
+import { createOceanPeer } from "./network";
+import { applyReactionToggle } from "./reactions";
+import {
+  appendDmBubble,
+  appendWaverBubble,
+  ChatMessage,
+  escapeHtml,
+  getTimeNow,
+  playDropPing,
+  renderSavedContacts
+} from "./ui";
+import { WaverManager, WaverMessage } from "./wavers";
 
 const STORAGE_USER_KEY = "whatson_username";
 const STORAGE_CHATS_KEY = "whatson_dm_history";
 const STORAGE_SOUND_KEY = "whatson_sound_enabled";
-const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB P2P cap
 
 let peer: Peer | null = null;
 let myUsername = localStorage.getItem(STORAGE_USER_KEY) || "";
+let currentMode: "none" | "dm" | "waver" = "none";
 let currentChatPeer: string | null = null;
 let activeConn: DataConnection | null = null;
-let activeCall: MediaConnection | null = null;
-let pendingIncomingCall: MediaConnection | null = null;
-let localStream: MediaStream | null = null;
 
-let isMicEnabled = true;
-let isCamEnabled = true;
-let isSoundEnabled = localStorage.getItem(STORAGE_SOUND_KEY) !== "false";
-
+let soundEnabled = localStorage.getItem(STORAGE_SOUND_KEY) !== "false";
 let typingTimeout: number | null = null;
-let remoteTypingTimeout: number | null = null;
 
 let dmHistory: Record<string, ChatMessage[]> = JSON.parse(
   localStorage.getItem(STORAGE_CHATS_KEY) || "{}"
 );
 let unreadCounts: Record<string, number> = {};
+let waverMessages: WaverMessage[] = [];
 
-// Layout & Sidebar DOM
 const appShell = document.getElementById("app-shell") as HTMLDivElement;
-const soundToggleBtn = document.getElementById("sound-toggle-btn") as HTMLButtonElement;
 const usernameInput = document.getElementById("username-input") as HTMLInputElement;
 const saveUserBtn = document.getElementById("save-user-btn") as HTMLButtonElement;
 const myStatusBadge = document.getElementById("my-status-badge") as HTMLElement;
 const copyBtn = document.getElementById("copy-btn") as HTMLButtonElement;
+const soundToggleBtn = document.getElementById("sound-toggle-btn") as HTMLButtonElement;
 const peerIdInput = document.getElementById("peer-id-input") as HTMLInputElement;
 const connectBtn = document.getElementById("connect-btn") as HTMLButtonElement;
 const contactList = document.getElementById("contact-list") as HTMLUListElement;
 
-// Chat Header & Body DOM
+const waverRoomInput = document.getElementById("waver-room-input") as HTMLInputElement;
+const hostWaverBtn = document.getElementById("host-waver-btn") as HTMLButtonElement;
+const joinWaverBtn = document.getElementById("join-waver-btn") as HTMLButtonElement;
+const copyRoomBtn = document.getElementById("copy-room-btn") as HTMLButtonElement;
+const leaveWaverBtn = document.getElementById("leave-waver-btn") as HTMLButtonElement;
+
 const mobileBackBtn = document.getElementById("mobile-back-btn") as HTMLButtonElement;
+const chatAvatar = document.getElementById("chat-avatar") as HTMLSpanElement;
 const activePeerName = document.getElementById("active-peer-name") as HTMLHeadingElement;
 const activePeerStatus = document.getElementById("active-peer-status") as HTMLElement;
 const reconnectBtn = document.getElementById("reconnect-btn") as HTMLButtonElement;
 const deleteDmBtn = document.getElementById("delete-dm-btn") as HTMLButtonElement;
+const videoCallBtn = document.getElementById("video-call-btn") as HTMLButtonElement;
+const camToggleWrap = document.getElementById("cam-toggle-wrap") as HTMLLabelElement;
+const micToggleWrap = document.getElementById("mic-toggle-wrap") as HTMLLabelElement;
+
 const messagesDiv = document.getElementById("messages") as HTMLDivElement;
 const chatForm = document.getElementById("chat-form") as HTMLFormElement;
-const attachBtn = document.getElementById("attach-btn") as HTMLButtonElement;
 const fileInput = document.getElementById("file-input") as HTMLInputElement;
+const attachBtn = document.getElementById("attach-btn") as HTMLButtonElement;
 const messageInput = document.getElementById("message-input") as HTMLInputElement;
 const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
 
-// Call & Media Controls DOM
-const startCamToggle = document.getElementById("start-cam-toggle") as HTMLInputElement;
-const startMicToggle = document.getElementById("start-mic-toggle") as HTMLInputElement;
-const videoCallBtn = document.getElementById("video-call-btn") as HTMLButtonElement;
-const videoGrid = document.getElementById("video-grid") as HTMLDivElement;
-const localVideo = document.getElementById("local-video") as HTMLVideoElement;
-const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
-const toggleMicLiveBtn = document.getElementById("toggle-mic-live-btn") as HTMLButtonElement;
-const toggleCamLiveBtn = document.getElementById("toggle-cam-live-btn") as HTMLButtonElement;
-const endCallBtn = document.getElementById("end-call-btn") as HTMLButtonElement;
+const callManager = new CallManager();
 
-// Incoming Call Modal DOM
-const incomingCallModal = document.getElementById("incoming-call-modal") as HTMLDivElement;
-const callerNameLabel = document.getElementById("caller-name-label") as HTMLParagraphElement;
-const answerCamToggle = document.getElementById("answer-cam-toggle") as HTMLInputElement;
-const answerMicToggle = document.getElementById("answer-mic-toggle") as HTMLInputElement;
-const acceptCallBtn = document.getElementById("accept-call-btn") as HTMLButtonElement;
-const declineCallBtn = document.getElementById("decline-call-btn") as HTMLButtonElement;
+const waverManager = new WaverManager({
+  onRoomJoined: (roomId, isHost, members) => {
+    currentMode = "waver";
+    currentChatPeer = null;
+    waverMessages = [];
+    appShell.classList.add("mobile-chat-open");
 
-function updateSoundButtonUI() {
-  soundToggleBtn.textContent = isSoundEnabled ? "🔔" : "🔕";
-}
-updateSoundButtonUI();
+    chatAvatar.textContent = "👥";
+    activePeerName.textContent = roomId + (isHost ? " (Hosting)" : "");
+    activePeerStatus.classList.remove("typing-active");
+    activePeerStatus.textContent = "Members (" + members.length + "): " + members.join(", ");
 
-soundToggleBtn.addEventListener("click", () => {
-  isSoundEnabled = !isSoundEnabled;
-  localStorage.setItem(STORAGE_SOUND_KEY, String(isSoundEnabled));
-  updateSoundButtonUI();
+    setHeaderMode("waver");
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
+    attachBtn.disabled = true;
+
+    messagesDiv.innerHTML =
+      '<div class="welcome-note">Welcome to Waver room <strong>' +
+      escapeHtml(roomId) +
+      "</strong>! Share the room code so friends can join.</div>";
+    refreshContacts();
+  },
+  onMembersUpdated: (members) => {
+    if (currentMode === "waver") {
+      activePeerStatus.textContent = "Members (" + members.length + "): " + members.join(", ");
+    }
+  },
+  onMessageReceived: (msg) => {
+    waverMessages.push(msg);
+    if (currentMode === "waver") {
+      appendWaverBubble(messagesDiv, msg, myUsername, handleReactionClick);
+    }
+    playDropPing(soundEnabled);
+  },
+  onReactionUpdated: (messageId, emoji, fromUser) => {
+    const target = waverMessages.find((m) => m.id === messageId);
+    if (target) {
+      target.reactions = applyReactionToggle(target.reactions || {}, emoji, fromUser);
+      if (currentMode === "waver") {
+        renderWaverHistory();
+      }
+    }
+  },
+  onRoomClosed: (reason) => {
+    if (currentMode === "waver") {
+      activePeerStatus.textContent = reason;
+      messageInput.disabled = true;
+      sendBtn.disabled = true;
+    }
+  }
 });
 
-// Synthesized water-drop ping via Web Audio API (no external audio files needed)
-function playWaterPing() {
-  if (!isSoundEnabled) return;
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioCtx();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(580, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.14);
-    gain.gain.setValueAtTime(0.18, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.19);
-  } catch (e) {
-    // Ignore autoplay restrictions before first click
+hostWaverBtn.addEventListener("click", () => {
+  if (!myUsername) return;
+  const name = waverRoomInput.value.trim() || "waver-" + Math.floor(1000 + Math.random() * 9000);
+  waverRoomInput.value = "";
+  waverManager.hostRoom(name, myUsername);
+});
+
+joinWaverBtn.addEventListener("click", () => {
+  if (!peer || !myUsername) return;
+  const code = waverRoomInput.value.trim();
+  if (!code) {
+    alert("Enter the Waver room code to join.");
+    return;
   }
+  waverRoomInput.value = "";
+  waverManager.joinRoom(peer, code, myUsername);
+});
+
+copyRoomBtn.addEventListener("click", () => {
+  if (!waverManager.activeRoomId) return;
+  navigator.clipboard.writeText(waverManager.activeRoomId);
+  copyRoomBtn.textContent = "Copied!";
+  setTimeout(() => {
+    copyRoomBtn.textContent = "📋 Copy Code";
+  }, 1500);
+});
+
+leaveWaverBtn.addEventListener("click", () => {
+  waverManager.leaveRoom();
+  currentMode = "none";
+  setHeaderMode("none");
+  chatAvatar.textContent = "🌊";
+  activePeerName.textContent = "No Active Chat";
+  activePeerStatus.textContent = "Left Waver room";
+  messageInput.disabled = true;
+  sendBtn.disabled = true;
+  messagesDiv.innerHTML = '<div class="welcome-note">Select a DM or join a Waver room.</div>';
+});
+
+function setHeaderMode(mode: "none" | "dm" | "waver") {
+  copyRoomBtn.classList.toggle("hidden", mode !== "waver");
+  leaveWaverBtn.classList.toggle("hidden", mode !== "waver");
+
+  deleteDmBtn.classList.toggle("hidden", mode !== "dm");
+  videoCallBtn.classList.toggle("hidden", mode !== "dm");
+  camToggleWrap.classList.toggle("hidden", mode !== "dm");
+  micToggleWrap.classList.toggle("hidden", mode !== "dm");
+  reconnectBtn.classList.add("hidden");
 }
+
+soundToggleBtn.textContent = soundEnabled ? "🔔" : "🔕";
+soundToggleBtn.addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem(STORAGE_SOUND_KEY, String(soundEnabled));
+  soundToggleBtn.textContent = soundEnabled ? "🔔" : "🔕";
+});
+
+mobileBackBtn.addEventListener("click", () => {
+  appShell.classList.remove("mobile-chat-open");
+});
+
+videoCallBtn.addEventListener("click", () => {
+  if (!activeConn || !peer || currentMode !== "dm") return;
+  callManager.startOutgoingCall(peer, activeConn.peer);
+});
 
 function sanitizeUsername(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
-}
-
-function generateMsgId(): string {
-  return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
 }
 
 function initPeer(requestedId: string) {
@@ -144,7 +204,7 @@ function initPeer(requestedId: string) {
   myStatusBadge.textContent = "Checking ID...";
   myStatusBadge.className = "badge offline";
 
-  const newPeer = new Peer(cleanId);
+  const newPeer = createOceanPeer(cleanId);
 
   newPeer.on("open", (id) => {
     peer = newPeer;
@@ -162,8 +222,10 @@ function initPeer(requestedId: string) {
       myStatusBadge.className = "badge offline";
       usernameInput.focus();
     } else if (err.type === "peer-unavailable") {
-      activePeerStatus.textContent = "User is offline right now";
-      reconnectBtn.classList.remove("hidden");
+      if (currentMode === "dm") {
+        activePeerStatus.textContent = "User is offline right now";
+        reconnectBtn.classList.remove("hidden");
+      }
     } else {
       console.error("PeerJS Error:", err);
     }
@@ -171,135 +233,15 @@ function initPeer(requestedId: string) {
 
   newPeer.on("connection", (conn) => {
     ensureContactExists(conn.peer);
-    renderContactList();
     setupDataConnection(conn);
   });
 
   newPeer.on("call", (call) => {
-    if (activeCall || pendingIncomingCall) {
-      call.close();
-      return;
-    }
-    playWaterPing();
-    pendingIncomingCall = call;
-    callerNameLabel.textContent = call.peer + " is calling you...";
-    answerCamToggle.checked = startCamToggle.checked;
-    answerMicToggle.checked = startMicToggle.checked;
-    incomingCallModal.classList.remove("hidden");
+    callManager.handleIncomingCall(call);
   });
 }
 
-// Mobile Back Button
-mobileBackBtn.addEventListener("click", () => {
-  appShell.classList.remove("mobile-chat-open");
-});
-
-// Incoming Call Actions
-acceptCallBtn.addEventListener("click", async () => {
-  if (!pendingIncomingCall) return;
-  const callToAnswer = pendingIncomingCall;
-  pendingIncomingCall = null;
-  incomingCallModal.classList.add("hidden");
-
-  try {
-    const stream = await prepareLocalMedia(answerCamToggle.checked, answerMicToggle.checked);
-    callToAnswer.answer(stream);
-    handleCallStream(callToAnswer);
-  } catch (err) {
-    alert("Could not access camera or microphone. Check browser permissions.");
-    callToAnswer.close();
-  }
-});
-
-declineCallBtn.addEventListener("click", () => {
-  if (pendingIncomingCall) {
-    pendingIncomingCall.close();
-    pendingIncomingCall = null;
-  }
-  incomingCallModal.classList.add("hidden");
-});
-
-videoCallBtn.addEventListener("click", async () => {
-  if (!activeConn || !peer) return;
-  try {
-    const stream = await prepareLocalMedia(startCamToggle.checked, startMicToggle.checked);
-    const call = peer.call(activeConn.peer, stream);
-    handleCallStream(call);
-  } catch (err) {
-    alert("Could not access camera or microphone. Check browser permissions.");
-  }
-});
-
-async function prepareLocalMedia(camOn: boolean, micOn: boolean): Promise<MediaStream> {
-  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-
-  isCamEnabled = camOn;
-  isMicEnabled = micOn;
-
-  localStream.getVideoTracks().forEach((track) => {
-    track.enabled = isCamEnabled;
-  });
-  localStream.getAudioTracks().forEach((track) => {
-    track.enabled = isMicEnabled;
-  });
-
-  updateLiveControlButtons();
-  localVideo.srcObject = localStream;
-  videoGrid.classList.remove("hidden");
-  return localStream;
-}
-
-toggleMicLiveBtn.addEventListener("click", () => {
-  if (!localStream) return;
-  isMicEnabled = !isMicEnabled;
-  localStream.getAudioTracks().forEach((track) => {
-    track.enabled = isMicEnabled;
-  });
-  updateLiveControlButtons();
-});
-
-toggleCamLiveBtn.addEventListener("click", () => {
-  if (!localStream) return;
-  isCamEnabled = !isCamEnabled;
-  localStream.getVideoTracks().forEach((track) => {
-    track.enabled = isCamEnabled;
-  });
-  updateLiveControlButtons();
-});
-
-function updateLiveControlButtons() {
-  toggleMicLiveBtn.textContent = isMicEnabled ? "🎤 Mic On" : "🔇 Mic Off";
-  toggleMicLiveBtn.className = isMicEnabled ? "control-btn" : "control-btn off";
-
-  toggleCamLiveBtn.textContent = isCamEnabled ? "📷 Cam On" : "🚫 Cam Off";
-  toggleCamLiveBtn.className = isCamEnabled ? "control-btn" : "control-btn off";
-}
-
-function handleCallStream(call: MediaConnection) {
-  activeCall = call;
-  call.on("stream", (remoteStream) => {
-    remoteVideo.srcObject = remoteStream;
-  });
-  call.on("close", stopCall);
-  call.on("error", stopCall);
-}
-
-endCallBtn.addEventListener("click", stopCall);
-
-function stopCall() {
-  activeCall?.close();
-  activeCall = null;
-  localStream?.getTracks().forEach((track) => track.stop());
-  localStream = null;
-  remoteVideo.srcObject = null;
-  localVideo.srcObject = null;
-  videoGrid.classList.add("hidden");
-}
-
-// Username & Chat Controls
-saveUserBtn.addEventListener("click", () => {
-  initPeer(usernameInput.value);
-});
+saveUserBtn.addEventListener("click", () => initPeer(usernameInput.value));
 
 copyBtn.addEventListener("click", () => {
   if (!myUsername) return;
@@ -322,62 +264,62 @@ connectBtn.addEventListener("click", () => {
 });
 
 reconnectBtn.addEventListener("click", () => {
-  if (currentChatPeer) {
-    openChatWithPeer(currentChatPeer);
-  }
+  if (currentChatPeer) openChatWithPeer(currentChatPeer);
 });
 
 deleteDmBtn.addEventListener("click", () => {
-  if (currentChatPeer) {
-    deleteDmHistory(currentChatPeer);
-  }
+  if (currentChatPeer) deleteDmHistory(currentChatPeer);
 });
 
-function deleteDmHistory(peerId: string) {
-  const confirmed = confirm('Delete your DM history with "' + peerId + '"?');
-  if (!confirmed) return;
+function deleteDmHistory(targetId: string) {
+  if (!confirm('Delete all chat history with "' + targetId + '"?')) return;
 
-  delete dmHistory[peerId];
-  delete unreadCounts[peerId];
-  localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(dmHistory));
+  delete dmHistory[targetId];
+  delete unreadCounts[targetId];
+  saveHistoryToStorage();
 
-  if (currentChatPeer === peerId) {
-    if (activeConn) {
+  if (currentChatPeer === targetId) {
+    if (activeConn && activeConn.peer === targetId) {
       activeConn.close();
       activeConn = null;
     }
     currentChatPeer = null;
+    currentMode = "none";
+    setHeaderMode("none");
     appShell.classList.remove("mobile-chat-open");
     activePeerName.textContent = "No Active Chat";
-    activePeerStatus.textContent = "Select a DM or enter a username";
-    activePeerStatus.classList.remove("typing");
+    activePeerStatus.textContent = "Select a DM or join a Waver";
     messageInput.disabled = true;
     sendBtn.disabled = true;
     attachBtn.disabled = true;
     videoCallBtn.disabled = true;
-    reconnectBtn.classList.add("hidden");
-    deleteDmBtn.classList.add("hidden");
     messagesDiv.innerHTML =
-      '<div class="welcome-note">DM deleted. Select another contact or start a new chat!</div>';
+      '<div class="welcome-note">Conversation with <strong>' +
+      escapeHtml(targetId) +
+      "</strong> was deleted.</div>";
   }
 
-  renderContactList();
+  refreshContacts();
 }
 
 function openChatWithPeer(targetId: string) {
+  if (currentMode === "waver") {
+    waverManager.leaveRoom();
+  }
+
+  currentMode = "dm";
   currentChatPeer = targetId;
   unreadCounts[targetId] = 0;
-  appShell.classList.add("mobile-chat-open");
-
   ensureContactExists(targetId);
-  renderContactList();
+  refreshContacts();
   renderChatHistory(targetId);
 
+  appShell.classList.add("mobile-chat-open");
+  chatAvatar.textContent = "🌊";
   activePeerName.textContent = targetId;
+  activePeerStatus.classList.remove("typing-active");
   activePeerStatus.textContent = "Connecting...";
-  activePeerStatus.classList.remove("typing");
-  reconnectBtn.classList.add("hidden");
-  deleteDmBtn.classList.remove("hidden");
+  setHeaderMode("dm");
 
   if (!peer) return;
   const conn = peer.connect(targetId, { reliable: true });
@@ -385,98 +327,33 @@ function openChatWithPeer(targetId: string) {
 }
 
 function setupDataConnection(conn: DataConnection) {
-  if (!currentChatPeer) {
+  if (currentMode === "none" && !currentChatPeer) {
+    currentMode = "dm";
     currentChatPeer = conn.peer;
-    appShell.classList.add("mobile-chat-open");
+    setHeaderMode("dm");
   }
 
   conn.on("open", () => {
-    if (currentChatPeer === conn.peer) {
+    if (currentMode === "dm" && currentChatPeer === conn.peer) {
       activeConn = conn;
       activePeerName.textContent = conn.peer;
+      activePeerStatus.classList.remove("typing-active");
       activePeerStatus.textContent = "Online (P2P Connected)";
-      activePeerStatus.classList.remove("typing");
       messageInput.disabled = false;
       sendBtn.disabled = false;
       attachBtn.disabled = false;
       videoCallBtn.disabled = false;
       reconnectBtn.classList.add("hidden");
-      deleteDmBtn.classList.remove("hidden");
-      sendReadReceipts(conn);
+      conn.send({ type: "seen" });
     }
   });
 
-  conn.on("data", (raw) => {
-    const packet = parsePacket(raw);
-
-    if (packet.type === "typing") {
-      if (currentChatPeer === conn.peer) {
-        if (packet.isTyping) {
-          activePeerStatus.textContent = conn.peer + " is typing...";
-          activePeerStatus.classList.add("typing");
-          if (remoteTypingTimeout) window.clearTimeout(remoteTypingTimeout);
-          remoteTypingTimeout = window.setTimeout(() => {
-            activePeerStatus.textContent = "Online (P2P Connected)";
-            activePeerStatus.classList.remove("typing");
-          }, 3000);
-        } else {
-          activePeerStatus.textContent = "Online (P2P Connected)";
-          activePeerStatus.classList.remove("typing");
-        }
-      }
-      return;
-    }
-
-    if (packet.type === "ack" && packet.msgId) {
-      updateMessageStatus(conn.peer, packet.msgId, "delivered");
-      return;
-    }
-
-    if (packet.type === "read") {
-      markAllSentAsRead(conn.peer);
-      return;
-    }
-
-    if (packet.type === "chat" || packet.type === "file") {
-      const msgId = packet.msgId || generateMsgId();
-      const isImage =
-        packet.type === "file" &&
-        typeof packet.mimeType === "string" &&
-        packet.mimeType.startsWith("image/");
-
-      const incomingMsg: ChatMessage = {
-        id: msgId,
-        sender: "received",
-        kind: packet.type === "file" ? (isImage ? "image" : "file") : "text",
-        text: packet.text || packet.fileName || "Attachment",
-        fileData: packet.fileData,
-        fileName: packet.fileName,
-        timestamp: getTimeNow()
-      };
-
-      saveMessageObject(conn.peer, incomingMsg);
-      playWaterPing();
-
-      // Send delivery receipt immediately
-      conn.send({ type: "ack", msgId: msgId } as WirePacket);
-
-      if (currentChatPeer === conn.peer) {
-        activePeerStatus.textContent = "Online (P2P Connected)";
-        activePeerStatus.classList.remove("typing");
-        appendMessageBubble(incomingMsg);
-        conn.send({ type: "read" } as WirePacket);
-      } else {
-        unreadCounts[conn.peer] = (unreadCounts[conn.peer] || 0) + 1;
-      }
-
-      renderContactList();
-    }
-  });
+  conn.on("data", (raw) => handleIncomingPacket(conn, raw));
 
   conn.on("close", () => {
-    if (currentChatPeer === conn.peer) {
+    if (currentMode === "dm" && currentChatPeer === conn.peer) {
+      activePeerStatus.classList.remove("typing-active");
       activePeerStatus.textContent = "Disconnected";
-      activePeerStatus.classList.remove("typing");
       messageInput.disabled = true;
       sendBtn.disabled = true;
       attachBtn.disabled = true;
@@ -486,164 +363,280 @@ function setupDataConnection(conn: DataConnection) {
   });
 }
 
-function parsePacket(raw: unknown): WirePacket {
+function handleIncomingPacket(conn: DataConnection, raw: unknown) {
+  const peerId = conn.peer;
+
   if (typeof raw === "object" && raw !== null && "type" in raw) {
-    return raw as WirePacket;
+    const packet = raw as Record<string, unknown>;
+
+    if (packet.type === "typing") {
+      if (currentMode === "dm" && currentChatPeer === peerId) {
+        if (packet.isTyping) {
+          activePeerStatus.textContent = peerId + " is typing...";
+          activePeerStatus.classList.add("typing-active");
+        } else {
+          activePeerStatus.textContent = "Online (P2P Connected)";
+          activePeerStatus.classList.remove("typing-active");
+        }
+      }
+      return;
+    }
+
+    if (packet.type === "ack") {
+      updateMessageStatus(peerId, String(packet.id), "delivered");
+      return;
+    }
+
+    if (packet.type === "seen") {
+      markAllMessagesSeen(peerId);
+      return;
+    }
+
+    if (packet.type === "reaction") {
+      toggleDmReactionLocal(peerId, String(packet.messageId), String(packet.emoji), peerId);
+      return;
+    }
+
+    if (packet.type === "file") {
+      receiveMessageObject(conn, {
+        id: String(packet.id || Date.now()),
+        sender: "received",
+        text: String(packet.fileName || "Shared File"),
+        timestamp: getTimeNow(),
+        fileName: String(packet.fileName || "file"),
+        fileType: String(packet.fileType || "application/octet-stream"),
+        fileDataUrl: String(packet.fileDataUrl || ""),
+        reactions: {}
+      });
+      return;
+    }
+
+    if (packet.type === "chat") {
+      receiveMessageObject(conn, {
+        id: String(packet.id || Date.now()),
+        sender: "received",
+        text: String(packet.text || ""),
+        timestamp: getTimeNow(),
+        reactions: {}
+      });
+      return;
+    }
   }
-  return { type: "chat", text: String(raw) };
+
+  receiveMessageObject(conn, {
+    id: String(Date.now()),
+    sender: "received",
+    text: String(raw),
+    timestamp: getTimeNow(),
+    reactions: {}
+  });
 }
 
-function sendReadReceipts(conn: DataConnection) {
+function receiveMessageObject(conn: DataConnection, msg: ChatMessage) {
+  const peerId = conn.peer;
+  ensureContactExists(peerId);
+  dmHistory[peerId].push(msg);
+  saveHistoryToStorage();
+
   if (conn.open) {
-    conn.send({ type: "read" } as WirePacket);
+    conn.send({ type: "ack", id: msg.id });
   }
+
+  if (currentMode === "dm" && currentChatPeer === peerId) {
+    activePeerStatus.textContent = "Online (P2P Connected)";
+    activePeerStatus.classList.remove("typing-active");
+    appendDmBubble(messagesDiv, msg, myUsername, handleReactionClick);
+    if (conn.open) conn.send({ type: "seen" });
+  } else {
+    unreadCounts[peerId] = (unreadCounts[peerId] || 0) + 1;
+    playDropPing(soundEnabled);
+  }
+
+  refreshContacts();
 }
 
-// Live Typing Indicator Emission
 messageInput.addEventListener("input", () => {
-  if (!activeConn || !activeConn.open) return;
-  activeConn.send({ type: "typing", isTyping: true } as WirePacket);
+  if (currentMode !== "dm" || !activeConn || !activeConn.open) return;
 
+  activeConn.send({ type: "typing", isTyping: true });
   if (typingTimeout) window.clearTimeout(typingTimeout);
   typingTimeout = window.setTimeout(() => {
     if (activeConn && activeConn.open) {
-      activeConn.send({ type: "typing", isTyping: false } as WirePacket);
+      activeConn.send({ type: "typing", isTyping: false });
     }
   }, 1500);
 });
 
-// Send Text Message
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const text = messageInput.value.trim();
-  if (!text || !activeConn || !currentChatPeer) return;
+  if (!text) return;
 
-  const msgId = generateMsgId();
-  const msgObj: ChatMessage = {
+  if (currentMode === "waver") {
+    const wMsg = waverManager.sendWaverMessage(text, getTimeNow());
+    if (wMsg) {
+      waverMessages.push(wMsg);
+      appendWaverBubble(messagesDiv, wMsg, myUsername, handleReactionClick);
+    }
+    messageInput.value = "";
+    return;
+  }
+
+  if (currentMode !== "dm" || !activeConn || !currentChatPeer) return;
+
+  const msgId = "msg-" + Date.now() + "-" + Math.floor(Math.random() * 1000);
+  const msg: ChatMessage = {
     id: msgId,
     sender: "sent",
-    kind: "text",
     text: text,
     timestamp: getTimeNow(),
-    status: "sent"
+    status: "sent",
+    reactions: {}
   };
 
-  activeConn.send({ type: "typing", isTyping: false } as WirePacket);
-  activeConn.send({ type: "chat", msgId: msgId, text: text } as WirePacket);
+  activeConn.send({ type: "chat", id: msgId, text: text });
+  activeConn.send({ type: "typing", isTyping: false });
 
-  saveMessageObject(currentChatPeer, msgObj);
-  appendMessageBubble(msgObj);
-  renderContactList();
+  ensureContactExists(currentChatPeer);
+  dmHistory[currentChatPeer].push(msg);
+  saveHistoryToStorage();
+  appendDmBubble(messagesDiv, msg, myUsername, handleReactionClick);
+  refreshContacts();
   messageInput.value = "";
 });
 
-// P2P Image & File Attachment
 attachBtn.addEventListener("click", () => {
+  if (!activeConn || currentMode !== "dm") return;
   fileInput.click();
 });
 
 fileInput.addEventListener("change", () => {
-  const file = fileInput.files?.[0];
-  fileInput.value = "";
+  const file = fileInput.files ? fileInput.files[0] : null;
   if (!file || !activeConn || !currentChatPeer) return;
 
-  if (file.size > MAX_FILE_BYTES) {
-    alert("File is too large for direct P2P transfer (Max 10MB).");
+  if (file.size > 10 * 1024 * 1024) {
+    alert("Please pick a file smaller than 10 MB for fast P2P transfer.");
+    fileInput.value = "";
     return;
   }
 
   const reader = new FileReader();
   reader.onload = () => {
     if (!activeConn || !currentChatPeer) return;
-    const base64Data = String(reader.result);
-    const isImage = file.type.startsWith("image/");
-    const msgId = generateMsgId();
+    const dataUrl = String(reader.result);
+    const msgId = "file-" + Date.now();
 
-    const msgObj: ChatMessage = {
+    const msg: ChatMessage = {
       id: msgId,
       sender: "sent",
-      kind: isImage ? "image" : "file",
       text: file.name,
-      fileData: base64Data,
-      fileName: file.name,
       timestamp: getTimeNow(),
-      status: "sent"
+      status: "sent",
+      fileName: file.name,
+      fileType: file.type,
+      fileDataUrl: dataUrl,
+      reactions: {}
     };
 
     activeConn.send({
       type: "file",
-      msgId: msgId,
-      fileData: base64Data,
+      id: msgId,
       fileName: file.name,
-      mimeType: file.type
-    } as WirePacket);
+      fileType: file.type,
+      fileDataUrl: dataUrl
+    });
 
-    saveMessageObject(currentChatPeer, msgObj);
-    appendMessageBubble(msgObj);
-    renderContactList();
+    ensureContactExists(currentChatPeer);
+    dmHistory[currentChatPeer].push(msg);
+    saveHistoryToStorage();
+    appendDmBubble(messagesDiv, msg, myUsername, handleReactionClick);
+    refreshContacts();
   };
   reader.readAsDataURL(file);
+  fileInput.value = "";
 });
 
-// History, Receipts & Contact Helpers
-function ensureContactExists(peerId: string) {
-  if (!dmHistory[peerId]) {
-    dmHistory[peerId] = [];
-    saveStorageSafe();
+function handleReactionClick(msgId: string, emoji: string) {
+  if (!myUsername) return;
+
+  if (currentMode === "waver") {
+    const target = waverMessages.find((m) => m.id === msgId);
+    if (target) {
+      target.reactions = applyReactionToggle(target.reactions || {}, emoji, myUsername);
+      waverManager.sendWaverReaction(msgId, emoji);
+      renderWaverHistory();
+    }
+    return;
   }
-}
 
-function saveMessageObject(peerId: string, msg: ChatMessage) {
-  ensureContactExists(peerId);
-  dmHistory[peerId].push(msg);
-  saveStorageSafe();
-}
-
-function saveStorageSafe() {
-  try {
-    localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(dmHistory));
-  } catch (e) {
-    // Trim oldest media payloads if localStorage quota is full
-    Object.keys(dmHistory).forEach((pid) => {
-      dmHistory[pid] = dmHistory[pid].slice(-30);
-    });
-    try {
-      localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(dmHistory));
-    } catch (inner) {
-      console.warn("Storage quota reached.");
+  if (currentMode === "dm" && currentChatPeer) {
+    toggleDmReactionLocal(currentChatPeer, msgId, emoji, myUsername);
+    if (activeConn && activeConn.open) {
+      activeConn.send({ type: "reaction", messageId: msgId, emoji: emoji });
     }
   }
 }
 
-function updateMessageStatus(peerId: string, msgId: string, status: "delivered" | "read") {
+function toggleDmReactionLocal(peerId: string, msgId: string, emoji: string, actor: string) {
   const list = dmHistory[peerId];
   if (!list) return;
   const target = list.find((m) => m.id === msgId);
-  if (target && target.status !== "read") {
-    target.status = status;
-    saveStorageSafe();
-    if (currentChatPeer === peerId) {
-      renderChatHistory(peerId);
-    }
+  if (!target) return;
+
+  target.reactions = applyReactionToggle(target.reactions || {}, emoji, actor);
+  saveHistoryToStorage();
+  if (currentMode === "dm" && currentChatPeer === peerId) {
+    renderChatHistory(peerId);
   }
 }
 
-function markAllSentAsRead(peerId: string) {
+function updateMessageStatus(peerId: string, msgId: string, newStatus: "delivered" | "seen") {
+  const list = dmHistory[peerId];
+  if (!list) return;
+  const target = list.find((m) => m.id === msgId);
+  if (target && target.status !== "seen") {
+    target.status = newStatus;
+    saveHistoryToStorage();
+    if (currentMode === "dm" && currentChatPeer === peerId) renderChatHistory(peerId);
+  }
+}
+
+function markAllMessagesSeen(peerId: string) {
   const list = dmHistory[peerId];
   if (!list) return;
   let changed = false;
   list.forEach((m) => {
-    if (m.sender === "sent" && m.status !== "read") {
-      m.status = "read";
+    if (m.sender === "sent" && m.status !== "seen") {
+      m.status = "seen";
       changed = true;
     }
   });
   if (changed) {
-    saveStorageSafe();
-    if (currentChatPeer === peerId) {
-      renderChatHistory(peerId);
-    }
+    saveHistoryToStorage();
+    if (currentMode === "dm" && currentChatPeer === peerId) renderChatHistory(peerId);
   }
+}
+
+function ensureContactExists(peerId: string) {
+  if (!dmHistory[peerId]) {
+    dmHistory[peerId] = [];
+    saveHistoryToStorage();
+  }
+}
+
+function saveHistoryToStorage() {
+  const cleanCopy: Record<string, ChatMessage[]> = {};
+  Object.keys(dmHistory).forEach((k) => {
+    cleanCopy[k] = dmHistory[k].map((m) => ({
+      id: m.id,
+      sender: m.sender,
+      text: m.fileDataUrl ? "[File] " + m.text : m.text,
+      timestamp: m.timestamp,
+      status: m.status,
+      reactions: m.reactions || {}
+    }));
+  });
+  localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(cleanCopy));
 }
 
 function renderChatHistory(peerId: string) {
@@ -656,120 +649,26 @@ function renderChatHistory(peerId: string) {
       "</strong></div>";
     return;
   }
-  history.forEach((msg) => appendMessageBubble(msg));
+  history.forEach((msg) => appendDmBubble(messagesDiv, msg, myUsername, handleReactionClick));
 }
 
-function getReceiptHtml(msg: ChatMessage): string {
-  if (msg.sender !== "sent") return "";
-  if (msg.status === "read") {
-    return '<span class="receipt-icon read" title="Read">✓✓ Seen</span>';
-  }
-  if (msg.status === "delivered") {
-    return '<span class="receipt-icon" title="Delivered">✓✓</span>';
-  }
-  return '<span class="receipt-icon" title="Sent">✓</span>';
+function renderWaverHistory() {
+  messagesDiv.innerHTML = "";
+  waverMessages.forEach((m) => appendWaverBubble(messagesDiv, m, myUsername, handleReactionClick));
 }
 
-function appendMessageBubble(msg: ChatMessage) {
-  const welcome = messagesDiv.querySelector(".welcome-note");
-  if (welcome) welcome.remove();
-
-  const bubble = document.createElement("div");
-  bubble.className = "msg " + msg.sender;
-
-  let bodyHtml = "";
-  if (msg.kind === "image" && msg.fileData) {
-    bodyHtml =
-      '<img src="' +
-      msg.fileData +
-      '" alt="' +
-      escapeHtml(msg.fileName || "Image") +
-      '" class="shared-image" />';
-  } else if (msg.kind === "file" && msg.fileData) {
-    bodyHtml =
-      '<div class="file-card"><span>📄 ' +
-      escapeHtml(msg.fileName || "File") +
-      '</span><a href="' +
-      msg.fileData +
-      '" download="' +
-      escapeHtml(msg.fileName || "download") +
-      '" class="file-download-link">Download</a></div>';
-  } else {
-    bodyHtml = "<span>" + escapeHtml(msg.text) + "</span>";
-  }
-
-  bubble.innerHTML =
-    bodyHtml +
-    '<div class="msg-meta"><span>' +
-    msg.timestamp +
-    "</span>" +
-    getReceiptHtml(msg) +
-    "</div>";
-
-  messagesDiv.appendChild(bubble);
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
+function refreshContacts() {
+  renderSavedContacts(
+    contactList,
+    dmHistory,
+    unreadCounts,
+    currentMode === "dm" ? currentChatPeer : null,
+    openChatWithPeer,
+    deleteDmHistory
+  );
 }
 
-function renderContactList() {
-  contactList.innerHTML = "";
-  Object.keys(dmHistory).forEach((peerId) => {
-    const msgs = dmHistory[peerId];
-    const lastMsgObj = msgs.length > 0 ? msgs[msgs.length - 1] : null;
-    const lastPreview = lastMsgObj
-      ? lastMsgObj.kind === "image"
-        ? "📷 Photo"
-        : lastMsgObj.kind === "file"
-        ? "📎 " + lastMsgObj.text
-        : lastMsgObj.text
-      : "No messages yet";
-
-    const unread = unreadCounts[peerId] || 0;
-
-    const li = document.createElement("li");
-    li.className = "contact-item" + (currentChatPeer === peerId ? " active" : "");
-
-    const infoDiv = document.createElement("div");
-    infoDiv.className = "contact-info";
-
-    const badgeHtml =
-      unread > 0 ? '<span class="unread-badge">' + String(unread) + "</span>" : "";
-
-    infoDiv.innerHTML =
-      '<div class="contact-name-row"><div class="contact-name">🌊 ' +
-      escapeHtml(peerId) +
-      "</div>" +
-      badgeHtml +
-      '</div><div class="contact-preview">' +
-      escapeHtml(lastPreview) +
-      "</div>";
-
-    const delBtn = document.createElement("button");
-    delBtn.className = "delete-contact-btn";
-    delBtn.title = "Delete DM";
-    delBtn.textContent = "🗑️";
-    delBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      deleteDmHistory(peerId);
-    });
-
-    li.appendChild(infoDiv);
-    li.appendChild(delBtn);
-    li.addEventListener("click", () => openChatWithPeer(peerId));
-    contactList.appendChild(li);
-  });
-}
-
-function getTimeNow(): string {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function escapeHtml(str: string): string {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
-
-renderContactList();
+refreshContacts();
 if (myUsername) {
   usernameInput.value = myUsername;
   initPeer(myUsername);
