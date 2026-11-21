@@ -186,6 +186,21 @@
         }
       })();
     </script>
+       <script>
+      (function () {
+        var msgInput = document.getElementById("message-input");
+        var attachBtn = document.getElementById("attach-btn");
+        if (!msgInput || !attachBtn) return;
+
+        var observer = new MutationObserver(function () {
+          var isWaver = !document.getElementById("leave-waver-btn").classList.contains("hidden");
+          attachBtn.disabled = msgInput.disabled || isWaver;
+        });
+
+        observer.observe(msgInput, { attributes: true, attributeFilter: ["disabled"] });
+      })();
+    </script>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
