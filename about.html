@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About What'sOn — Serverless Ocean Messenger</title>
+    <link rel="stylesheet" href="/src/about.css" />
+  </head>
+  <body>
+    <div class="about-shell">
+      <header class="about-header">
+        <div class="brand">
+          <div class="logo-dot"></div>
+          <h1>What'sOn</h1>
+        </div>
+        <a href="./index.html" class="back-btn">← Back to Messenger</a>
+      </header>
+
+      <main class="about-content">
+        <section class="hero-card">
+          <span class="pill">100% Serverless • Peer-to-Peer • Open Source</span>
+          <h2>Messaging Without Middleman Servers</h2>
+          <p>
+            What'sOn connects your browser directly to your friends using WebRTC and PeerJS.
+            Your messages, photos, and video calls travel straight from device to device—never
+            stored in a corporate cloud database.
+          </p>
+        </section>
+
+        <section class="grid-cards">
+          <article class="info-card">
+            <div class="card-icon">🔒</div>
+            <h3>True P2P Encryption</h3>
+            <p>
+              Every chat tunnel and video stream is encrypted end-to-end via WebRTC DTLS/SRTP.
+              Only you and the person you connect with can read or see what is shared.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <div class="card-icon">💾</div>
+            <h3>Local-First Storage</h3>
+            <p>
+              Your username and Saved DMs stay right inside your own browser's local storage.
+              Deleting a DM wipes it cleanly from your device immediately.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <div class="card-icon">📹</div>
+            <h3>Consent-First Calls</h3>
+            <p>
+              Incoming calls always ask you to Accept or Decline first—with pre-call Camera and
+              Mic switches so your lens never turns on by surprise.
+            </p>
+          </article>
+
+          <article class="info-card">
+            <div class="card-icon">🌊</div>
+            <h3>Wavers (Group Rooms)</h3>
+            <p>
+              Create or join multi-person P2P rooms called <strong>Wavers</strong> to chat and
+              hang out with an entire crew using a single room code. <em>This feature is coming soon!</em>
+            </p>
+          </article>
+        </section>
+
+        <section class="faq-card">
+          <h3>Quick Safety & Connection Tips</h3>
+          <ul>
+            <li>
+              <strong>Keep your username tab open:</strong> Since there is no central server,
+              friends can only reach you while your What'sOn tab is open and online.
+            </li>
+            <li>
+              <strong>Strict Wi-Fi or Cellular:</strong> Some school or office firewalls block
+              direct P2P connections. Switching networks or using a TURN relay resolves it.
+            </li>
+            <li>
+              <strong>Browser Data:</strong> Clearing your browser site data resets your saved
+              DMs and releases your claimed username.
+            </li>
+          </ul>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
