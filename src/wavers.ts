@@ -1,5 +1,4 @@
 import Peer, { DataConnection } from "peerjs";
-import { createOceanPeer } from "./network";
 
 export interface WaverMessage {
   id: string;
@@ -47,7 +46,7 @@ export class WaverManager {
     }
 
     const roomPeerId = cleanRoom.indexOf("waver-") === 0 ? cleanRoom : "waver-" + cleanRoom;
-    const roomPeer = createOceanPeer(roomPeerId);
+    const roomPeer = new Peer(roomPeerId);
 
     roomPeer.on("open", (id) => {
       this.hostPeer = roomPeer;
