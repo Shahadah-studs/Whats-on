@@ -1,4 +1,4 @@
-export const QUICK_EMOJIS = ["👍", "❤️", "😂", "🌊", "🔥"];
+export const QUICK_EMOJIS = ["👍", "❤️", "😂", "🌊", "🔥", "🎉"];
 
 export function buildReactionBar(
   messageId: string,
@@ -43,6 +43,23 @@ export function buildReactionBar(
     });
     picker.appendChild(btn);
   });
+
+  const customBtn = document.createElement("button");
+  customBtn.type = "button";
+  customBtn.className = "emoji-choice-btn";
+  customBtn.textContent = "+";
+  customBtn.title = "Custom emoji reaction";
+  customBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const typed = prompt("Enter any emoji to react with:");
+    if (typed && typed.trim()) {
+      const firstToken = Array.from(typed.trim())[0];
+      if (firstToken) {
+        onToggleReaction(messageId, firstToken);
+      }
+    }
+  });
+  picker.appendChild(customBtn);
 
   wrapper.appendChild(activeList);
   wrapper.appendChild(picker);
