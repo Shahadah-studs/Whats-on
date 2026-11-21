@@ -24,6 +24,7 @@ let dmHistory: Record<string, ChatMessage[]> = JSON.parse(
   localStorage.getItem(STORAGE_CHATS_KEY) || "{}"
 );
 
+// Sidebar & Chat DOM
 const usernameInput = document.getElementById("username-input") as HTMLInputElement;
 const saveUserBtn = document.getElementById("save-user-btn") as HTMLButtonElement;
 const myStatusBadge = document.getElementById("my-status-badge") as HTMLElement;
@@ -35,11 +36,13 @@ const contactList = document.getElementById("contact-list") as HTMLUListElement;
 const activePeerName = document.getElementById("active-peer-name") as HTMLHeadingElement;
 const activePeerStatus = document.getElementById("active-peer-status") as HTMLElement;
 const reconnectBtn = document.getElementById("reconnect-btn") as HTMLButtonElement;
+const deleteDmBtn = document.getElementById("delete-dm-btn") as HTMLButtonElement;
 const messagesDiv = document.getElementById("messages") as HTMLDivElement;
 const chatForm = document.getElementById("chat-form") as HTMLFormElement;
 const messageInput = document.getElementById("message-input") as HTMLInputElement;
 const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
 
+// Call & Media Controls DOM
 const startCamToggle = document.getElementById("start-cam-toggle") as HTMLInputElement;
 const startMicToggle = document.getElementById("start-mic-toggle") as HTMLInputElement;
 const videoCallBtn = document.getElementById("video-call-btn") as HTMLButtonElement;
@@ -50,6 +53,7 @@ const toggleMicLiveBtn = document.getElementById("toggle-mic-live-btn") as HTMLB
 const toggleCamLiveBtn = document.getElementById("toggle-cam-live-btn") as HTMLButtonElement;
 const endCallBtn = document.getElementById("end-call-btn") as HTMLButtonElement;
 
+// Incoming Call Modal DOM
 const incomingCallModal = document.getElementById("incoming-call-modal") as HTMLDivElement;
 const callerNameLabel = document.getElementById("caller-name-label") as HTMLParagraphElement;
 const answerCamToggle = document.getElementById("answer-cam-toggle") as HTMLInputElement;
@@ -102,6 +106,7 @@ function initPeer(requestedId: string) {
 
   newPeer.on("connection", (conn) => {
     ensureContactExists(conn.peer);
+    renderContactList();
     setupDataConnection(conn);
   });
 
@@ -249,6 +254,45 @@ reconnectBtn.addEventListener("click", () => {
   }
 });
 
+// Delete DM Handler (Header Button)
+if (deleteDmBtn) {
+  deleteDmBtn.addEventListener("click", () => {
+    if (currentChatPeer) {
+      deleteDmThread(currentChatPeer);
+    }
+  });
+}
+
+function deleteDmThread(peerId: string) {
+  const confirmed = confirm('Delete DM history with "' + peerId + '"?');
+  if (!confirmed) return;
+
+  delete dmHistory[peerId];
+  localStorage.setItem(STORAGE_CHATS_KEY, JSON.stringify(dmHistory));
+
+  if (currentChatPeer === peerId) {
+    if (activeConn && activeConn.peer === peerId) {
+      activeConn.close();
+      activeConn = null;
+    }
+    if (activeCall && activeCall.peer === peerId) {
+      stopCall();
+    }
+    currentChatPeer = null;
+    activePeerName.textContent = "No Active Chat";
+    activePeerStatus.textContent = "Select a DM or enter a username";
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    videoCallBtn.disabled = true;
+    reconnectBtn.classList.add("hidden");
+    if (deleteDmBtn) deleteDmBtn.classList.add("hidden");
+    messagesDiv.innerHTML =
+      '<div class="welcome-note">Claim a permanent <strong>Username</strong> on the left so friends can message you anytime!</div>';
+  }
+
+  renderContactList();
+}
+
 function openChatWithPeer(targetId: string) {
   currentChatPeer = targetId;
   ensureContactExists(targetId);
@@ -258,6 +302,7 @@ function openChatWithPeer(targetId: string) {
   activePeerName.textContent = targetId;
   activePeerStatus.textContent = "Connecting...";
   reconnectBtn.classList.add("hidden");
+  if (deleteDmBtn) deleteDmBtn.classList.remove("hidden");
 
   if (!peer) return;
   const conn = peer.connect(targetId);
@@ -267,6 +312,7 @@ function openChatWithPeer(targetId: string) {
 function setupDataConnection(conn: DataConnection) {
   if (!currentChatPeer) {
     currentChatPeer = conn.peer;
+    if (deleteDmBtn) deleteDmBtn.classList.remove("hidden");
   }
 
   conn.on("open", () => {
@@ -278,6 +324,7 @@ function setupDataConnection(conn: DataConnection) {
       sendBtn.disabled = false;
       videoCallBtn.disabled = false;
       reconnectBtn.classList.add("hidden");
+      if (deleteDmBtn) deleteDmBtn.classList.remove("hidden");
     }
   });
 
@@ -359,13 +406,32 @@ function renderContactList() {
 
     const li = document.createElement("li");
     li.className = "contact-item" + (currentChatPeer === peerId ? " active" : "");
-    li.innerHTML =
-      '<div><div class="contact-name">🌊 ' +
+
+    const infoDiv = document.createElement("div");
+    infoDiv.style.flex = "1";
+    infoDiv.style.overflow = "hidden";
+    infoDiv.innerHTML =
+      '<div class="contact-name">🌊 ' +
       escapeHtml(peerId) +
       '</div><div class="contact-preview">' +
       escapeHtml(lastMsg) +
-      "</div></div>";
-    li.addEventListener("click", () => openChatWithPeer(peerId));
+      "</div>";
+    infoDiv.addEventListener("click", () => openChatWithPeer(peerId));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "delete-contact-btn";
+    delBtn.title = "Delete DM";
+    delBtn.textContent = "🗑️";
+    delBtn.style.background = "transparent";
+    delBtn.style.color = "#ef4444";
+    delBtn.style.padding = "4px 6px";
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      deleteDmThread(peerId);
+    });
+
+    li.appendChild(infoDiv);
+    li.appendChild(delBtn);
     contactList.appendChild(li);
   });
 }
