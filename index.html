@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#004e7c" />
     <title>What'sOn — P2P Ocean Messenger</title>
+    <link rel="manifest" href="./manifest.json" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
@@ -42,6 +44,7 @@
           </div>
           <div class="brand-right">
             <a href="./about.html" class="about-link" title="About What'sOn">About</a>
+            <button id="theme-toggle-btn" class="icon-btn" title="Toggle Dark Mode">🌙</button>
             <button id="sound-toggle-btn" class="icon-btn" title="Toggle Notification Sound">🔔</button>
           </div>
         </header>
@@ -150,6 +153,40 @@
       </main>
     </div>
 
+    <script>
+      (function () {
+        var THEME_KEY = "whatson_index_theme";
+        var btn = document.getElementById("theme-toggle-btn");
+
+        function applyTheme(theme) {
+          if (theme === "dark") {
+            document.documentElement.setAttribute("data-theme", "dark");
+            if (btn) btn.textContent = "☀️";
+          } else {
+            document.documentElement.removeAttribute("data-theme");
+            if (btn) btn.textContent = "🌙";
+          }
+        }
+
+        applyTheme(localStorage.getItem(THEME_KEY) || "light");
+
+        if (btn) {
+          btn.addEventListener("click", function () {
+            var isDark = document.documentElement.getAttribute("data-theme") === "dark";
+            var next = isDark ? "light" : "dark";
+            localStorage.setItem(THEME_KEY, next);
+            applyTheme(next);
+          });
+        }
+
+        if ("serviceWorker" in navigator) {
+          window.addEventListener("load", function () {
+            navigator.serviceWorker.register("./sw.js").catch(function () {});
+          });
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+
