@@ -7,6 +7,31 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <!-- Incoming Call Modal -->
+    <div id="incoming-call-modal" class="modal-backdrop hidden">
+      <div class="call-modal">
+        <div class="ring-icon">📞</div>
+        <h3>Incoming Call</h3>
+        <p id="caller-name-label">Someone is calling you...</p>
+
+        <div class="precall-toggles">
+          <label class="toggle-chip">
+            <input type="checkbox" id="answer-cam-toggle" checked />
+            <span>📷 Camera ON</span>
+          </label>
+          <label class="toggle-chip">
+            <input type="checkbox" id="answer-mic-toggle" checked />
+            <span>🎤 Mic ON</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button id="accept-call-btn" class="accept-btn">Accept</button>
+          <button id="decline-call-btn" class="decline-btn">Decline</button>
+        </div>
+      </div>
+    </div>
+
     <div class="app-shell">
       <!-- Sidebar -->
       <aside class="sidebar">
@@ -56,7 +81,15 @@
           </div>
           <div class="call-actions">
             <button id="reconnect-btn" class="icon-btn hidden">🔄 Reconnect</button>
-            <button id="video-call-btn" class="icon-btn" disabled>📹 Video Call</button>
+            <label class="header-toggle" title="Start call with Camera">
+              <input type="checkbox" id="start-cam-toggle" checked />
+              <span>📷</span>
+            </label>
+            <label class="header-toggle" title="Start call with Mic">
+              <input type="checkbox" id="start-mic-toggle" checked />
+              <span>🎤</span>
+            </label>
+            <button id="video-call-btn" class="icon-btn" disabled>📹 Call</button>
           </div>
         </header>
 
@@ -64,7 +97,13 @@
         <div id="video-grid" class="video-grid hidden">
           <video id="remote-video" autoplay playsinline></video>
           <video id="local-video" autoplay muted playsinline></video>
-          <button id="end-call-btn" class="end-call-btn">End Call</button>
+
+          <!-- In-Call Media Controls -->
+          <div class="in-call-controls">
+            <button id="toggle-mic-live-btn" class="control-btn">🎤 Mic On</button>
+            <button id="toggle-cam-live-btn" class="control-btn">📷 Cam On</button>
+            <button id="end-call-btn" class="end-call-btn">End Call</button>
+          </div>
         </div>
 
         <!-- Messages -->
@@ -91,4 +130,3 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
-
