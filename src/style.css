@@ -10,6 +10,7 @@
   --text-muted: #5c768d;
   --border-color: #cde4f0;
   --danger: #ef4444;
+  --danger-soft: #fee2e2;
 }
 
 * {
@@ -194,7 +195,7 @@ body {
 }
 
 .badge.offline {
-  background: #fee2e2;
+  background: var(--danger-soft);
   color: #991b1b;
 }
 
@@ -245,6 +246,16 @@ button:disabled {
   color: var(--white);
 }
 
+.danger-outline-btn {
+  background: var(--danger-soft);
+  color: #b91c1c;
+}
+
+.danger-outline-btn:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--white);
+}
+
 /* Saved Contacts List */
 .contacts-section {
   flex: 1;
@@ -270,12 +281,18 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 8px;
   transition: 0.15s ease;
 }
 
 .contact-item:hover, .contact-item.active {
   border-color: var(--mint-green);
   background: var(--ocean-light);
+}
+
+.contact-info {
+  min-width: 0;
+  flex: 1;
 }
 
 .contact-name {
@@ -287,10 +304,23 @@ button:disabled {
 .contact-preview {
   font-size: 0.78rem;
   color: var(--text-muted);
-  max-width: 180px;
+  max-width: 175px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.delete-contact-btn {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+.delete-contact-btn:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 /* Chat Area */
