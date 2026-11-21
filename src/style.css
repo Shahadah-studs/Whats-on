@@ -739,6 +739,54 @@ max-width: 85%;
   --danger-soft: #450a0a;
 }
 
+/* Clean Compact Header Controls */
+.brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ocean-deep);
+  flex-shrink: 0;
+}
+
+.brand-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.brand-left h1 {
+  font-size: 1.35rem;
+  white-space: nowrap;
+}
+
+.brand-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.about-link {
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ocean-mid);
+  background: var(--ocean-light);
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.brand-right .icon-btn {
+  padding: 6px 8px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+
 [data-theme="dark"] body {
   background: linear-gradient(135deg, #030910 0%, #071b2e 100%);
 }
