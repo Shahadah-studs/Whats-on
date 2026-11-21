@@ -15,21 +15,33 @@
           <h1>What'sOn</h1>
         </header>
 
+        <!-- Custom Username Card -->
         <div class="connection-card">
-          <label>Your What'sOn ID</label>
+          <label for="username-input">Your Username (ID)</label>
           <div class="id-row">
-            <input type="text" id="my-id" readonly value="Connecting..." />
-            <button id="copy-btn" title="Copy ID">Copy</button>
+            <input type="text" id="username-input" placeholder="Choose username..." />
+            <button id="save-user-btn" class="primary-btn">Claim</button>
           </div>
+          <div class="id-actions">
+            <small id="my-status-badge" class="badge offline">Offline</small>
+            <button id="copy-btn" class="link-btn">Copy ID</button>
+          </div>
+        </div>
 
-          <label for="peer-id-input">Connect to Friend</label>
+        <!-- Start New DM -->
+        <div class="connection-card">
+          <label for="peer-id-input">New Direct Message</label>
           <div class="id-row">
-            <input type="text" id="peer-id-input" placeholder="Paste friend's ID..." />
+            <input type="text" id="peer-id-input" placeholder="Friend's username..." />
             <button id="connect-btn" class="primary-btn">Chat</button>
           </div>
         </div>
 
-        <div class="status-banner" id="status-text">Waiting for peer...</div>
+        <!-- Saved Long-Term DMs -->
+        <div class="contacts-section">
+          <label>Saved DMs</label>
+          <ul id="contact-list" class="contact-list"></ul>
+        </div>
       </aside>
 
       <!-- Main Chat Window -->
@@ -39,15 +51,16 @@
             <span class="avatar">🌊</span>
             <div>
               <h2 id="active-peer-name">No Active Chat</h2>
-              <small id="active-peer-status">Offline</small>
+              <small id="active-peer-status">Select a DM or enter a username</small>
             </div>
           </div>
           <div class="call-actions">
+            <button id="reconnect-btn" class="icon-btn hidden">🔄 Reconnect</button>
             <button id="video-call-btn" class="icon-btn" disabled>📹 Video Call</button>
           </div>
         </header>
 
-        <!-- Video Overlay (Hidden until call starts) -->
+        <!-- Video Overlay -->
         <div id="video-grid" class="video-grid hidden">
           <video id="remote-video" autoplay playsinline></video>
           <video id="local-video" autoplay muted playsinline></video>
@@ -57,7 +70,7 @@
         <!-- Messages -->
         <div id="messages" class="messages-container">
           <div class="welcome-note">
-            Share your <strong>What'sOn ID</strong> to start an encrypted peer-to-peer chat or video call.
+            Claim a permanent <strong>Username</strong> on the left so friends can message you anytime!
           </div>
         </div>
 
@@ -78,3 +91,4 @@
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
+
