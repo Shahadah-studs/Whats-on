@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WaveDrop — Large P2P File Transfer | What'sOn</title>
+    <link rel="stylesheet" href="/src/drop.css" />
+  </head>
+  <body>
+    <div class="drop-shell">
+      <header class="drop-header">
+        <div class="brand">
+          <div class="logo-dot"></div>
+          <h1>WaveDrop <small>by What'sOn</small></h1>
+        </div>
+        <div class="nav-links">
+          <a href="./index.html" class="nav-btn primary">← Messenger</a>
+          <a href="./about.html" class="nav-btn">About</a>
+        </div>
+      </header>
+
+      <main class="drop-content">
+        <section class="intro-banner">
+          <h2>Send Large Files Directly Browser-to-Browser</h2>
+          <p>
+            No file size limits or cloud uploads. Files stream in 64 KB encrypted WebRTC chunks straight from your device to your friend's.
+          </p>
+        </section>
+
+        <!-- Step 1: Connect -->
+        <div class="panel-grid">
+          <div class="card">
+            <label>1. Your WaveDrop ID</label>
+            <div class="row">
+              <input type="text" id="drop-my-id" readonly value="Connecting..." />
+              <button id="drop-copy-btn" class="mint-btn">Copy</button>
+            </div>
+            <small id="drop-status" class="status-pill">Initializing...</small>
+          </div>
+
+          <div class="card">
+            <label for="drop-peer-input">2. Connect to Receiver</label>
+            <div class="row">
+              <input type="text" id="drop-peer-input" placeholder="Paste receiver's Drop ID..." />
+              <button id="drop-connect-btn" class="ocean-btn">Link</button>
+            </div>
+            <small id="drop-conn-label" class="muted-text">Not connected yet</small>
+          </div>
+        </div>
+
+        <!-- Step 2: Drop Zone -->
+        <div id="drop-zone" class="drop-zone disabled">
+          <input type="file" id="drop-file-input" class="hidden" />
+          <div class="drop-icon">📦</div>
+          <h3>Click or Drag & Drop Any File Here</h3>
+          <p>Supports large videos, ZIP archives, PDFs, and high-res photos</p>
+        </div>
+
+        <!-- Live Progress Bar -->
+        <div id="progress-box" class="progress-box hidden">
+          <div class="progress-top">
+            <span id="progress-file-name">Transferring...</span>
+            <span id="progress-percent">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Received Downloads -->
+        <div class="downloads-section">
+          <h3>Received Files</h3>
+          <ul id="received-list" class="received-list">
+            <li class="empty-msg">No files received yet in this session.</li>
+          </ul>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/drop.ts"></script>
+  </body>
+</html>
