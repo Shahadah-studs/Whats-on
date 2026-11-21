@@ -721,3 +721,80 @@ display: none;
 max-width: 85%; 
 } 
 }
+/* =========================================
+   DEEP SEA DARK MODE (index.html ONLY)
+   ========================================= */
+[data-theme="dark"] {
+  --ocean-deep: #38bdf8;
+  --ocean-mid: #0284c7;
+  --ocean-light: #162a3d;
+  --mint-green: #10b981;
+  --mint-soft: #064e3b;
+  --white: #0b1926;
+  --bg-sand: #08131d;
+  --text-dark: #e2f1f8;
+  --text-muted: #8aa6be;
+  --border-color: #1c364d;
+  --danger: #ef4444;
+  --danger-soft: #450a0a;
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(135deg, #030910 0%, #071b2e 100%);
+}
+
+[data-theme="dark"] .app-shell {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+}
+
+[data-theme="dark"] .waver-card {
+  background: linear-gradient(180deg, #0b1926 0%, #092428 100%);
+  border-color: #134e4a;
+}
+
+[data-theme="dark"] .messages-container {
+  background-color: #07111a;
+}
+
+[data-theme="dark"] input[type="text"] {
+  background: #0f2336;
+  color: #e2f1f8;
+}
+
+[data-theme="dark"] input[type="text"]::placeholder {
+  color: #6c8aa3;
+}
+
+[data-theme="dark"] .badge.online {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .badge.offline {
+  background: #450a0a;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .msg.sent {
+  background: #059669;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .msg.received {
+  background: #13293d;
+  color: #e2f1f8;
+}
+
+[data-theme="dark"] .reaction-pill {
+  background: #0f2336;
+  color: #e2f1f8;
+}
+
+[data-theme="dark"] .reaction-pill.mine {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .reaction-picker {
+  background: #0f2336;
+}
