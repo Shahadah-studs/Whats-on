@@ -9,6 +9,7 @@
   --text-dark: #0f293a;
   --text-muted: #5c768d;
   --border-color: #cde4f0;
+  --danger: #ef4444;
 }
 
 * {
@@ -37,6 +38,93 @@ body {
   grid-template-columns: 330px 1fr;
   overflow: hidden;
   box-shadow: 0 20px 50px rgba(0, 35, 60, 0.3);
+}
+
+/* Incoming Call Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 35, 60, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.call-modal {
+  background: var(--white);
+  padding: 28px 32px;
+  border-radius: 18px;
+  text-align: center;
+  width: 90%;
+  max-width: 380px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  border: 2px solid var(--ocean-light);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ring-icon {
+  font-size: 2.4rem;
+  animation: pulse 1.2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+
+.call-modal h3 {
+  color: var(--ocean-deep);
+  font-size: 1.25rem;
+}
+
+.call-modal p {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.precall-toggles {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+
+.toggle-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-sand);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ocean-deep);
+  cursor: pointer;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.accept-btn {
+  background: var(--mint-green);
+  color: var(--white);
+  padding: 10px 22px;
+  font-size: 0.95rem;
+}
+
+.decline-btn {
+  background: var(--danger);
+  color: var(--white);
+  padding: 10px 22px;
+  font-size: 0.95rem;
 }
 
 /* Sidebar */
@@ -250,7 +338,20 @@ button:disabled {
 
 .call-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.header-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-sand);
+  border: 1px solid var(--border-color);
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .hidden {
@@ -338,19 +439,41 @@ button:disabled {
 
 #local-video {
   position: absolute;
-  bottom: 16px;
+  bottom: 74px;
   right: 16px;
   width: 160px;
   border-radius: 10px;
   border: 2px solid var(--mint-green);
+  background: #082032;
+}
+
+.in-call-controls {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  background: rgba(15, 41, 58, 0.85);
+  padding: 8px 14px;
+  border-radius: 99px;
+}
+
+.control-btn {
+  background: var(--ocean-mid);
+  color: var(--white);
+  padding: 8px 14px;
+  border-radius: 99px;
+}
+
+.control-btn.off {
+  background: #475569;
+  color: #cbd5e1;
 }
 
 .end-call-btn {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #ef4444;
-  color: white;
-  padding: 10px 20px;
+  background: var(--danger);
+  color: var(--white);
+  padding: 8px 16px;
+  border-radius: 99px;
 }
