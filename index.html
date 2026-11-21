@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>What'sOn — P2P Ocean Messenger</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <header class="brand-header">
+          <div class="logo-dot"></div>
+          <h1>What'sOn</h1>
+        </header>
+
+        <div class="connection-card">
+          <label>Your What'sOn ID</label>
+          <div class="id-row">
+            <input type="text" id="my-id" readonly value="Connecting..." />
+            <button id="copy-btn" title="Copy ID">Copy</button>
+          </div>
+
+          <label for="peer-id-input">Connect to Friend</label>
+          <div class="id-row">
+            <input type="text" id="peer-id-input" placeholder="Paste friend's ID..." />
+            <button id="connect-btn" class="primary-btn">Chat</button>
+          </div>
+        </div>
+
+        <div class="status-banner" id="status-text">Waiting for peer...</div>
+      </aside>
+
+      <!-- Main Chat Window -->
+      <main class="chat-area">
+        <header class="chat-header">
+          <div class="peer-info">
+            <span class="avatar">🌊</span>
+            <div>
+              <h2 id="active-peer-name">No Active Chat</h2>
+              <small id="active-peer-status">Offline</small>
+            </div>
+          </div>
+          <div class="call-actions">
+            <button id="video-call-btn" class="icon-btn" disabled>📹 Video Call</button>
+          </div>
+        </header>
+
+        <!-- Video Overlay (Hidden until call starts) -->
+        <div id="video-grid" class="video-grid hidden">
+          <video id="remote-video" autoplay playsinline></video>
+          <video id="local-video" autoplay muted playsinline></video>
+          <button id="end-call-btn" class="end-call-btn">End Call</button>
+        </div>
+
+        <!-- Messages -->
+        <div id="messages" class="messages-container">
+          <div class="welcome-note">
+            Share your <strong>What'sOn ID</strong> to start an encrypted peer-to-peer chat or video call.
+          </div>
+        </div>
+
+        <!-- Input Bar -->
+        <form id="chat-form" class="input-bar">
+          <input
+            type="text"
+            id="message-input"
+            placeholder="Type a message..."
+            autocomplete="off"
+            disabled
+          />
+          <button type="submit" id="send-btn" disabled>Send</button>
+        </form>
+      </main>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
