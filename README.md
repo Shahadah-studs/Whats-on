@@ -27,10 +27,9 @@ A browser-based peer-to-peer messaging app for direct conversations, file sharin
 
 Language composition:
 
-- TypeScript — 52.1%
-- CSS — 30.9%
-- HTML — 17%
-
+- TypeScript — Most of the site
+- CSS — Styles the site
+- HTML — Lands the site
 ## Getting Started
 
 ### Prerequisites
