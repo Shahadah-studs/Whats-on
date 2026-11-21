@@ -32,12 +32,15 @@
       </div>
     </div>
 
-    <div class="app-shell">
+    <div id="app-shell" class="app-shell">
       <!-- Sidebar -->
       <aside class="sidebar">
         <header class="brand-header">
-          <div class="logo-dot"></div>
-          <h1>What'sOn</h1>
+          <div class="brand-left">
+            <div class="logo-dot"></div>
+            <h1>What'sOn</h1>
+          </div>
+          <button id="sound-toggle-btn" class="icon-pill" title="Toggle Notification Sound">🔔</button>
         </header>
 
         <!-- Custom Username Card -->
@@ -73,14 +76,15 @@
       <main class="chat-area">
         <header class="chat-header">
           <div class="peer-info">
+            <button id="mobile-back-btn" class="mobile-back-btn" title="Back to DMs">←</button>
             <span class="avatar">🌊</span>
-            <div>
+            <div class="peer-meta">
               <h2 id="active-peer-name">No Active Chat</h2>
               <small id="active-peer-status">Select a DM or enter a username</small>
             </div>
           </div>
           <div class="call-actions">
-            <button id="reconnect-btn" class="icon-btn hidden">🔄 Reconnect</button>
+            <button id="reconnect-btn" class="icon-btn hidden">🔄</button>
             <label class="header-toggle" title="Start call with Camera">
               <input type="checkbox" id="start-cam-toggle" checked />
               <span>📷</span>
@@ -90,7 +94,7 @@
               <span>🎤</span>
             </label>
             <button id="video-call-btn" class="icon-btn" disabled>📹 Call</button>
-            <button id="delete-dm-btn" class="icon-btn danger-outline-btn hidden" title="Delete this DM">🗑️ Delete</button>
+            <button id="delete-dm-btn" class="danger-btn hidden" title="Delete this DM">🗑️</button>
           </div>
         </header>
 
@@ -110,12 +114,14 @@
         <!-- Messages -->
         <div id="messages" class="messages-container">
           <div class="welcome-note">
-            Claim a permanent <strong>Username</strong> on the left so friends can message you anytime!
+            Claim a permanent <strong>Username</strong> on the left so friends can message or send files to you anytime!
           </div>
         </div>
 
         <!-- Input Bar -->
         <form id="chat-form" class="input-bar">
+          <input type="file" id="file-input" class="hidden" />
+          <button type="button" id="attach-btn" class="attach-btn" title="Send Image or File (Max 10MB)" disabled>📎</button>
           <input
             type="text"
             id="message-input"
