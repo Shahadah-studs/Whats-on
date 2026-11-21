@@ -1,6 +1,5 @@
 import Peer, { DataConnection } from "peerjs";
 import { CallManager } from "./calls";
-import { createOceanPeer } from "./network";
 import { applyReactionToggle } from "./reactions";
 import {
   appendDmBubble,
@@ -32,6 +31,7 @@ let dmHistory: Record<string, ChatMessage[]> = JSON.parse(
 let unreadCounts: Record<string, number> = {};
 let waverMessages: WaverMessage[] = [];
 
+// DOM Elements
 const appShell = document.getElementById("app-shell") as HTMLDivElement;
 const usernameInput = document.getElementById("username-input") as HTMLInputElement;
 const saveUserBtn = document.getElementById("save-user-btn") as HTMLButtonElement;
@@ -65,6 +65,7 @@ const attachBtn = document.getElementById("attach-btn") as HTMLButtonElement;
 const messageInput = document.getElementById("message-input") as HTMLInputElement;
 const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
 
+// Initialize Modular Call & Waver Managers
 const callManager = new CallManager();
 
 const waverManager = new WaverManager({
@@ -120,6 +121,7 @@ const waverManager = new WaverManager({
   }
 });
 
+// Waver Events
 hostWaverBtn.addEventListener("click", () => {
   if (!myUsername) return;
   const name = waverRoomInput.value.trim() || "waver-" + Math.floor(1000 + Math.random() * 9000);
@@ -170,6 +172,7 @@ function setHeaderMode(mode: "none" | "dm" | "waver") {
   reconnectBtn.classList.add("hidden");
 }
 
+// Sound & Mobile Navigation
 soundToggleBtn.textContent = soundEnabled ? "🔔" : "🔕";
 soundToggleBtn.addEventListener("click", () => {
   soundEnabled = !soundEnabled;
@@ -186,6 +189,7 @@ videoCallBtn.addEventListener("click", () => {
   callManager.startOutgoingCall(peer, activeConn.peer);
 });
 
+// PeerJS Initialization (Standard Direct Connection)
 function sanitizeUsername(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
 }
@@ -204,7 +208,7 @@ function initPeer(requestedId: string) {
   myStatusBadge.textContent = "Checking ID...";
   myStatusBadge.className = "badge offline";
 
-  const newPeer = createOceanPeer(cleanId);
+  const newPeer = new Peer(cleanId);
 
   newPeer.on("open", (id) => {
     peer = newPeer;
@@ -322,7 +326,7 @@ function openChatWithPeer(targetId: string) {
   setHeaderMode("dm");
 
   if (!peer) return;
-  const conn = peer.connect(targetId, { reliable: true });
+  const conn = peer.connect(targetId);
   setupDataConnection(conn);
 }
 
@@ -455,6 +459,7 @@ function receiveMessageObject(conn: DataConnection, msg: ChatMessage) {
   refreshContacts();
 }
 
+// Typing & Message Submission
 messageInput.addEventListener("input", () => {
   if (currentMode !== "dm" || !activeConn || !activeConn.open) return;
 
@@ -505,6 +510,7 @@ chatForm.addEventListener("submit", (e) => {
   messageInput.value = "";
 });
 
+// File Attachment
 attachBtn.addEventListener("click", () => {
   if (!activeConn || currentMode !== "dm") return;
   fileInput.click();
@@ -556,6 +562,7 @@ fileInput.addEventListener("change", () => {
   fileInput.value = "";
 });
 
+// Reactions & Receipts
 function handleReactionClick(msgId: string, emoji: string) {
   if (!myUsername) return;
 
@@ -668,6 +675,7 @@ function refreshContacts() {
   );
 }
 
+// Boot Up
 refreshContacts();
 if (myUsername) {
   usernameInput.value = myUsername;
