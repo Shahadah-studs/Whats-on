@@ -14,7 +14,11 @@ let myUsername = localStorage.getItem(STORAGE_USER_KEY) || "";
 let currentChatPeer: string | null = null;
 let activeConn: DataConnection | null = null;
 let activeCall: MediaConnection | null = null;
+let pendingIncomingCall: MediaConnection | null = null;
 let localStream: MediaStream | null = null;
+
+let isMicEnabled = true;
+let isCamEnabled = true;
 
 let dmHistory: Record<string, ChatMessage[]> = JSON.parse(
   localStorage.getItem(STORAGE_CHATS_KEY) || "{}"
@@ -35,11 +39,23 @@ const messagesDiv = document.getElementById("messages") as HTMLDivElement;
 const chatForm = document.getElementById("chat-form") as HTMLFormElement;
 const messageInput = document.getElementById("message-input") as HTMLInputElement;
 const sendBtn = document.getElementById("send-btn") as HTMLButtonElement;
+
+const startCamToggle = document.getElementById("start-cam-toggle") as HTMLInputElement;
+const startMicToggle = document.getElementById("start-mic-toggle") as HTMLInputElement;
 const videoCallBtn = document.getElementById("video-call-btn") as HTMLButtonElement;
 const videoGrid = document.getElementById("video-grid") as HTMLDivElement;
 const localVideo = document.getElementById("local-video") as HTMLVideoElement;
 const remoteVideo = document.getElementById("remote-video") as HTMLVideoElement;
+const toggleMicLiveBtn = document.getElementById("toggle-mic-live-btn") as HTMLButtonElement;
+const toggleCamLiveBtn = document.getElementById("toggle-cam-live-btn") as HTMLButtonElement;
 const endCallBtn = document.getElementById("end-call-btn") as HTMLButtonElement;
+
+const incomingCallModal = document.getElementById("incoming-call-modal") as HTMLDivElement;
+const callerNameLabel = document.getElementById("caller-name-label") as HTMLParagraphElement;
+const answerCamToggle = document.getElementById("answer-cam-toggle") as HTMLInputElement;
+const answerMicToggle = document.getElementById("answer-mic-toggle") as HTMLInputElement;
+const acceptCallBtn = document.getElementById("accept-call-btn") as HTMLButtonElement;
+const declineCallBtn = document.getElementById("decline-call-btn") as HTMLButtonElement;
 
 function sanitizeUsername(raw: string): string {
   return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
@@ -89,13 +105,118 @@ function initPeer(requestedId: string) {
     setupDataConnection(conn);
   });
 
-  newPeer.on("call", async (call) => {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    localVideo.srcObject = localStream;
-    videoGrid.classList.remove("hidden");
-    call.answer(localStream);
-    handleCallStream(call);
+  newPeer.on("call", (call) => {
+    if (activeCall || pendingIncomingCall) {
+      call.close();
+      return;
+    }
+    pendingIncomingCall = call;
+    callerNameLabel.textContent = call.peer + " is calling you...";
+    answerCamToggle.checked = startCamToggle.checked;
+    answerMicToggle.checked = startMicToggle.checked;
+    incomingCallModal.classList.remove("hidden");
   });
+}
+
+acceptCallBtn.addEventListener("click", async () => {
+  if (!pendingIncomingCall) return;
+  const callToAnswer = pendingIncomingCall;
+  pendingIncomingCall = null;
+  incomingCallModal.classList.add("hidden");
+
+  try {
+    const stream = await prepareLocalMedia(answerCamToggle.checked, answerMicToggle.checked);
+    callToAnswer.answer(stream);
+    handleCallStream(callToAnswer);
+  } catch (err) {
+    alert("Could not access camera or microphone. Check browser permissions.");
+    callToAnswer.close();
+  }
+});
+
+declineCallBtn.addEventListener("click", () => {
+  if (pendingIncomingCall) {
+    pendingIncomingCall.close();
+    pendingIncomingCall = null;
+  }
+  incomingCallModal.classList.add("hidden");
+});
+
+videoCallBtn.addEventListener("click", async () => {
+  if (!activeConn || !peer) return;
+  try {
+    const stream = await prepareLocalMedia(startCamToggle.checked, startMicToggle.checked);
+    const call = peer.call(activeConn.peer, stream);
+    handleCallStream(call);
+  } catch (err) {
+    alert("Could not access camera or microphone. Check browser permissions.");
+  }
+});
+
+async function prepareLocalMedia(camOn: boolean, micOn: boolean): Promise<MediaStream> {
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+
+  isCamEnabled = camOn;
+  isMicEnabled = micOn;
+
+  localStream.getVideoTracks().forEach((track) => {
+    track.enabled = isCamEnabled;
+  });
+  localStream.getAudioTracks().forEach((track) => {
+    track.enabled = isMicEnabled;
+  });
+
+  updateLiveControlButtons();
+  localVideo.srcObject = localStream;
+  videoGrid.classList.remove("hidden");
+  return localStream;
+}
+
+toggleMicLiveBtn.addEventListener("click", () => {
+  if (!localStream) return;
+  isMicEnabled = !isMicEnabled;
+  localStream.getAudioTracks().forEach((track) => {
+    track.enabled = isMicEnabled;
+  });
+  updateLiveControlButtons();
+});
+
+toggleCamLiveBtn.addEventListener("click", () => {
+  if (!localStream) return;
+  isCamEnabled = !isCamEnabled;
+  localStream.getVideoTracks().forEach((track) => {
+    track.enabled = isCamEnabled;
+  });
+  updateLiveControlButtons();
+});
+
+function updateLiveControlButtons() {
+  toggleMicLiveBtn.textContent = isMicEnabled ? "🎤 Mic On" : "🔇 Mic Off";
+  toggleMicLiveBtn.className = isMicEnabled ? "control-btn" : "control-btn off";
+
+  toggleCamLiveBtn.textContent = isCamEnabled ? "📷 Cam On" : "🚫 Cam Off";
+  toggleCamLiveBtn.className = isCamEnabled ? "control-btn" : "control-btn off";
+}
+
+function handleCallStream(call: MediaConnection) {
+  activeCall = call;
+  call.on("stream", (remoteStream) => {
+    remoteVideo.srcObject = remoteStream;
+  });
+  call.on("close", stopCall);
+  call.on("error", stopCall);
+}
+
+endCallBtn.addEventListener("click", stopCall);
+
+function stopCall() {
+  activeCall?.close();
+  activeCall = null;
+  localStream?.getTracks().forEach((track) => track.stop());
+  localStream = null;
+  remoteVideo.srcObject = null;
+  localVideo.srcObject = null;
+  videoGrid.classList.add("hidden");
 }
 
 saveUserBtn.addEventListener("click", () => {
@@ -257,32 +378,6 @@ function escapeHtml(str: string): string {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
-}
-
-videoCallBtn.addEventListener("click", async () => {
-  if (!activeConn || !peer) return;
-  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-  localVideo.srcObject = localStream;
-  videoGrid.classList.remove("hidden");
-
-  const call = peer.call(activeConn.peer, localStream);
-  handleCallStream(call);
-});
-
-function handleCallStream(call: MediaConnection) {
-  activeCall = call;
-  call.on("stream", (remoteStream) => {
-    remoteVideo.srcObject = remoteStream;
-  });
-  call.on("close", stopCall);
-}
-
-endCallBtn.addEventListener("click", stopCall);
-
-function stopCall() {
-  activeCall?.close();
-  localStream?.getTracks().forEach((track) => track.stop());
-  videoGrid.classList.add("hidden");
 }
 
 renderContactList();
