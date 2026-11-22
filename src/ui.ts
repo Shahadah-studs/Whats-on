@@ -283,3 +283,52 @@ export function renderSavedContacts(
     listEl.appendChild(li);
   });
 }
+
+(function setupSessionGuard() {
+  const STORAGE_USER_KEY = "whatson_username";
+  let autoRetryCount = 0;
+  const MAX_RETRIES = 4;
+
+  // Intercept browser alert() during page boot if PeerJS still holds the old ghost tab
+  const originalAlert = window.alert.bind(window);
+  window.alert = (message?: unknown) => {
+    const text = String(message || "");
+    const savedUser = localStorage.getItem(STORAGE_USER_KEY);
+
+    if (
+      savedUser &&
+      text.indexOf("is currently taken") !== -1 &&
+      autoRetryCount < MAX_RETRIES
+    ) {
+      autoRetryCount += 1;
+      const badge = document.getElementById("my-status-badge");
+      if (badge) {
+        badge.textContent = "Reclaiming ID (" + autoRetryCount + "/" + MAX_RETRIES + ")...";
+      }
+
+      window.setTimeout(() => {
+        const input = document.getElementById("username-input") as HTMLInputElement | null;
+        const claimBtn = document.getElementById("save-user-btn") as HTMLButtonElement | null;
+        if (input && claimBtn) {
+          input.value = savedUser;
+          claimBtn.click();
+        }
+      }, 2500);
+      return;
+    }
+
+    originalAlert(message);
+  };
+
+  // Reset retry counter once status badge turns Online
+  window.addEventListener("load", () => {
+    const badge = document.getElementById("my-status-badge");
+    if (!badge) return;
+    const obs = new MutationObserver(() => {
+      if (badge.textContent === "Online") {
+        autoRetryCount = 0;
+      }
+    });
+    obs.observe(badge, { childList: true, characterData: true, subtree: true });
+  });
+})();
