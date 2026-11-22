@@ -203,6 +203,38 @@
     </script>
 
     <script type="module" src="/src/main.ts"></script>
+    <!-- Streamline Side Banner Popup Ad -->
+    <aside id="bwc-side-ad" class="side-ad-banner" aria-label="Featured Partner">
+      <button id="close-side-ad-btn" class="side-ad-close" type="button" title="Close ad">✕</button>
+      <a
+        href="https://bit.ly/4jczUYd"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="side-ad-link"
+      >
+        <img src="./ads/fav1con.png" alt="BloxdWorldCode Logo" class="side-ad-icon" />
+        <div class="side-ad-text">
+          <span class="side-ad-tag">FEATURED</span>
+          <strong>Join BloxdWorldCode</strong>
+          <small>World codes, commands & tools →</small>
+        </div>
+      </a>
+    </aside>
+
+    <script>
+      (function () {
+        var adBanner = document.getElementById("bwc-side-ad");
+        var closeBtn = document.getElementById("close-side-ad-btn");
+        if (adBanner && closeBtn) {
+          closeBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            adBanner.classList.add("hidden");
+          });
+        }
+      })();
+    </script>
+
   </body>
 </html>
 
