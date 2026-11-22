@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About What'sOn — Serverless Ocean Messenger</title>
+    <title>What'sOn Hub — Serverless Ocean Suite</title>
     <link rel="stylesheet" href="/about.css" />
   </head>
   <body>
@@ -11,76 +11,102 @@
       <header class="about-header">
         <div class="brand">
           <div class="logo-dot"></div>
-          <h1>What'sOn</h1>
+          <h1>What'sOn <small class="sub-tag">Suite</small></h1>
         </div>
-        <a href="./" class="back-btn">← Back to Messenger</a>
+        <a href="./" class="back-btn">← Open Messenger</a>
       </header>
 
       <main class="about-content">
+        <!-- Hero Banner -->
         <section class="hero-card">
-          <span class="pill">100% Serverless • Peer-to-Peer • Open Source</span>
-          <h2>Messaging Without Middleman Servers</h2>
+          <span class="pill">100% Serverless • Peer-to-Peer • Zero Accounts</span>
+          <h2>Your Complete Browser-to-Browser Ocean Suite</h2>
           <p>
-            What'sOn connects your browser directly to your friends using WebRTC and PeerJS.
-            Your messages, photos, and video calls travel straight from device to device—never
-            stored in a corporate cloud database.
+            What'sOn connects your device directly to friends anywhere in the world using WebRTC.
+            Every message, video call, drawing stroke, and file transfer travels straight peer-to-peer—with zero cloud databases in the middle.
           </p>
         </section>
 
-        <section class="grid-cards">
-          <article class="info-card">
-            <div class="card-icon">🔒</div>
-            <h3>True P2P Encryption</h3>
-            <p>
-              Every chat tunnel and video stream is encrypted end-to-end via WebRTC DTLS/SRTP.
-              Only you and the person you connect with can read or see what is shared.
-            </p>
-          </article>
+        <!-- Tool Launcher Grid -->
+        <section>
+          <h3 class="section-heading">Launch a What'sOn App</h3>
+          <div class="launcher-grid">
+            <a href="./index.html" class="tool-card featured">
+              <div class="tool-top">
+                <span class="tool-icon">💬</span>
+                <span class="tool-badge">Core App</span>
+              </div>
+              <h4>Ocean Messenger & Wavers</h4>
+              <p>
+                Encrypted 1-on-1 DMs, multi-user Waver group rooms, emoji reactions, read receipts, and consent-first video calls.
+              </p>
+              <span class="tool-cta">Launch Messenger →</span>
+            </a>
 
-          <article class="info-card">
-            <div class="card-icon">💾</div>
-            <h3>Local-First Storage</h3>
-            <p>
-              Your username and Saved DMs stay right inside your own browser's local storage.
-              Deleting a DM wipes it cleanly from your device immediately.
-            </p>
-          </article>
+            <a href="./board.html" class="tool-card">
+              <div class="tool-top">
+                <span class="tool-icon">🎨</span>
+                <span class="tool-badge">Live Canvas</span>
+              </div>
+              <h4>WaveBoard Whiteboard</h4>
+              <p>
+                Draw, brainstorm, or play games together in real time on a shared P2P canvas with instant PNG export.
+              </p>
+              <span class="tool-cta">Open WaveBoard →</span>
+            </a>
 
-          <article class="info-card">
-            <div class="card-icon">📹</div>
-            <h3>Consent-First Calls</h3>
-            <p>
-              Incoming calls always ask you to Accept or Decline first—with pre-call Camera and
-              Mic switches so your lens never turns on by surprise.
-            </p>
-          </article>
+            <a href="./drop.html" class="tool-card">
+              <div class="tool-top">
+                <span class="tool-icon">📦</span>
+                <span class="tool-badge">64 KB Chunks</span>
+              </div>
+              <h4>WaveDrop File Transfer</h4>
+              <p>
+                Send large videos, ZIP archives, and high-res files directly browser-to-browser with a live progress bar.
+              </p>
+              <span class="tool-cta">Open WaveDrop →</span>
+            </a>
 
-          <article class="info-card">
-            <div class="card-icon">🌊</div>
-            <h3>Wavers (Group Rooms)</h3>
-            <p>
-              Create or join multi-person P2P rooms called <strong>Wavers</strong> to chat and
-              hang out with an entire crew using a single room code. <em>This feature is coming soon!</em>
-            </p>
-          </article>
+            <a href="./backup.html" class="tool-card">
+              <div class="tool-top">
+                <span class="tool-icon">💾</span>
+                <span class="tool-badge">Local Vault</span>
+              </div>
+              <h4>WaveVault Backup & Restore</h4>
+              <p>
+                Export your claimed username and Saved DMs into a portable <code>.json</code> file or merge backups across devices.
+              </p>
+              <span class="tool-cta">Manage Backups →</span>
+            </a>
+          </div>
         </section>
 
-        <section class="faq-card">
-          <h3>Quick Safety & Connection Tips</h3>
-          <ul>
-            <li>
-              <strong>Keep your username tab open:</strong> Since there is no central server,
-              friends can only reach you while your What'sOn tab is open and online.
-            </li>
-            <li>
-              <strong>Strict Wi-Fi or Cellular:</strong> Some school or office firewalls block
-              direct P2P connections. Switching networks or using a TURN relay resolves it.
-            </li>
-            <li>
-              <strong>Browser Data:</strong> Clearing your browser site data resets your saved
-              DMs and releases your claimed username.
-            </li>
-          </ul>
+        <!-- 3-Step Quick Start -->
+        <section class="steps-card">
+          <h3>How to Connect in 3 Easy Steps</h3>
+          <div class="steps-row">
+            <div class="step-item">
+              <span class="step-num">1</span>
+              <div>
+                <strong>Claim Your Username</strong>
+                <p>Pick a custom ID in Messenger so your browser remembers you across reloads.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">2</span>
+              <div>
+                <strong>Share Your 1-Click Invite Link</strong>
+                <p>Tap <em>🔗 Invite Link</em> to copy a direct URL that opens your DM automatically.</p>
+              </div>
+            </div>
+            <div class="step-item">
+              <span class="step-num">3</span>
+              <div>
+                <strong>Chat, Call, Draw, or Drop</strong>
+                <p>Keep your Messenger tab open while online—and export a WaveVault backup anytime.</p>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
     </div>
