@@ -109,6 +109,49 @@ Waver room availability depends on the host staying online and PeerJS signaling 
 
 Browser camera and microphone permissions are required for calls.
 
+## WaveVault - Backup.html
+
+Wave vault lets you **Download/Upload** BackUp ^JSON^ files and a file looks like
+```{
+  "app": "What'sOn",
+  "exportedAt": "2026-11-22T01:18:24.305Z",
+  "username": "your-username",
+  "soundEnabled": false,
+  "dmHistory": {
+    "mintlabs": [],
+    "superb1oxd": [
+      {
+        "id": "msg-1795308937333-211",
+        "sender": "received",
+        "text": "`Hi!`",
+        "timestamp": "06:55 PM",
+        "reactions": {}
+      },
+      {
+        "id": "msg-1795308958066-19",
+        "sender": "sent",
+        "text": "Oh Hi! Links WOrk! https://shahadah-studs.github.io/Whats-on/",
+        "timestamp": "06:55 PM",
+        "status": "seen",
+        "reactions": {
+          "🎉": [
+            "superb1oxd"
+          ]
+        }
+      },
+      {
+        "id": "msg-1795308987368-812",
+        "sender": "sent",
+        "text": "Yep thans for the chat Im GOing offline",
+        "timestamp": "06:56 PM",
+        "status": "seen",
+        "reactions": {}
+      }
+    ]
+  }
+}
+```
+
 ## Project Structure
 
 ```text
