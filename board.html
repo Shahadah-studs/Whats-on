@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WaveBoard — Live P2P Whiteboard | What'sOn</title>
+    <link rel="stylesheet" href="/src/board.css" />
+  </head>
+  <body>
+    <div class="board-shell">
+      <header class="board-header">
+        <div class="brand">
+          <div class="logo-dot"></div>
+          <h1>WaveBoard <small>by What'sOn</small></h1>
+        </div>
+        <div class="nav-links">
+          <a href="./index.html" class="nav-btn primary">← Messenger</a>
+          <a href="./about.html" class="nav-btn">About</a>
+        </div>
+      </header>
+
+      <!-- Connection Bar -->
+      <section class="connect-strip">
+        <div class="strip-group">
+          <label>Your Board ID:</label>
+          <input type="text" id="board-my-id" readonly value="Connecting..." />
+          <button id="board-copy-btn" class="mint-btn">Copy</button>
+        </div>
+
+        <div class="strip-group">
+          <label for="board-peer-input">Partner ID:</label>
+          <input type="text" id="board-peer-input" placeholder="Paste friend's Board ID..." />
+          <button id="board-connect-btn" class="ocean-btn">Link</button>
+        </div>
+
+        <span id="board-status" class="status-badge">Solo Mode (Not Linked)</span>
+      </section>
+
+      <!-- Drawing Toolbar -->
+      <section class="toolbar">
+        <div class="color-swatches" id="color-swatches">
+          <button type="button" class="swatch active" data-color="#004e7c" style="background: #004e7c;" title="Ocean Deep"></button>
+          <button type="button" class="swatch" data-color="#0077b6" style="background: #0077b6;" title="Ocean Mid"></button>
+          <button type="button" class="swatch" data-color="#10b981" style="background: #10b981;" title="Mint Green"></button>
+          <button type="button" class="swatch" data-color="#ef4444" style="background: #ef4444;" title="Coral Red"></button>
+          <button type="button" class="swatch" data-color="#0f293a" style="background: #0f293a;" title="Deep Ink"></button>
+          <button type="button" id="eraser-btn" class="tool-btn" title="Eraser">🧽 Eraser</button>
+        </div>
+
+        <div class="brush-controls">
+          <label for="brush-size">Size:</label>
+          <input type="range" id="brush-size" min="2" max="24" value="4" />
+        </div>
+
+        <div class="board-actions">
+          <button type="button" id="save-png-btn" class="tool-btn">💾 Save PNG</button>
+          <button type="button" id="clear-board-btn" class="danger-btn">🗑️ Clear</button>
+        </div>
+      </section>
+
+      <!-- Interactive Canvas -->
+      <div class="canvas-wrap">
+        <canvas id="wave-canvas" width="1000" height="580"></canvas>
+      </div>
+    </div>
+
+    <script type="module" src="/src/board.ts"></script>
+  </body>
+</html>
