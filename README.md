@@ -1,12 +1,12 @@
 # What'sOn
 
-A browser-based, peer-to-peer messaging app for direct conversations, group rooms, file sharing, and audio/video calls.
+A browser-based peer-to-peer messenger for direct messages, group rooms, file sharing, and audio/video calls.
 
 **Live demo:** https://shahadah-studs.github.io/Whats-on/
 
 ## Overview
 
-What'sOn uses PeerJS and WebRTC to connect browsers without a traditional application database or chat server. Direct messages and calls travel between connected peers, while usernames and saved conversation history remain in browser local storage.
+What'sOn uses [PeerJS](https://peerjs.com/) and WebRTC to connect browsers directly without an application database or chat server. It includes persistent local chat history, shareable direct-message invite links, and temporary Waver group rooms.
 
 > Keep the app open while you want to be reachable. Clearing browser site data removes your claimed username and saved chat history.
 
@@ -14,8 +14,9 @@ What'sOn uses PeerJS and WebRTC to connect browsers without a traditional applic
 
 - Claim a custom username or PeerJS ID
 - Start direct messages with other online users
+- Share direct-message invite links
 - Send text messages, images, and files up to 10 MB
-- Host or join **Wavers**, named peer-to-peer group rooms
+- Host or join named **Waver** peer-to-peer group rooms
 - Share room codes with friends
 - View typing indicators, delivery receipts, seen receipts, and unread counts
 - React to direct-message and Waver messages
@@ -23,28 +24,30 @@ What'sOn uses PeerJS and WebRTC to connect browsers without a traditional applic
 - Accept or decline incoming calls
 - Toggle the camera and microphone before or during calls
 - Save direct-message history locally
+- Export and import data through **WaveVault**
 - Delete saved DM history
 - Switch between light and dark themes
 - Enable or disable notification sounds
 - Use the responsive interface on desktop and mobile
-- Install the app through its web app manifest
+- Install the app as a Progressive Web App
 
 ## Technology
 
-- **TypeScript** — Application logic and PeerJS integrations
-- **HTML** — Main messenger and About pages
+- **TypeScript** — Application logic and PeerJS integration
+- **HTML** — Main messenger and supporting pages
 - **CSS** — Responsive light/dark interface
 - **Vite** — Development server and production bundler
-- **PeerJS** — PeerJS signaling and WebRTC connections
+- **PeerJS** — Peer discovery and WebRTC signaling
 - **WebRTC** — Direct data and media connections
 - **Local Storage** — Username, theme, sound preference, and chat history
 - **Service Worker** — Progressive web app support
 
-Language composition:
+### Language Composition
 
-- TypeScript — 59.2%
-- CSS — 27.8%
-- HTML — 13%
+- TypeScript — 54.7%
+- CSS — 27.1%
+- HTML — 18%
+- JavaScript — 0.2%
 
 ## Getting Started
 
@@ -85,7 +88,7 @@ The production files are created in `dist/`.
 
 1. Open What'sOn and enter a username.
 2. Select **Claim** to make the username your PeerJS ID.
-3. Share the username with a friend.
+3. Share the username or copy the invite link.
 4. Enter the friend's username under **New Direct Message**.
 5. Select **Chat** to connect.
 6. Send text, files, or an image once the connection is open.
@@ -93,64 +96,34 @@ The production files are created in `dist/`.
 ### Wavers
 
 1. Enter a room name in **Wavers**.
-2. Select **Host Room** to create it, or share the displayed room code.
-3. A friend can enter that code and select **Join Room**.
+2. Select **Host Room** to create it, or enter a code and select **Join Room**.
+3. Share the displayed room code with friends.
 4. Room participants can exchange text messages and reactions.
 
-Waver room availability depends on the host staying online and PeerJS signaling remaining reachable.
+Waver availability depends on the host staying online and PeerJS signaling remaining reachable.
 
 ### Calls
 
 1. Open a direct-message conversation.
-2. Choose the camera and microphone settings.
+2. Choose camera and microphone settings.
 3. Select **Call**.
 4. The recipient can accept or decline the incoming call.
 5. Use the live controls to mute the microphone, disable the camera, or end the call.
 
 Browser camera and microphone permissions are required for calls.
 
-## WaveVault - Backup.html
+## WaveVault
 
-Wave vault lets you **Download/Upload** BackUp ^JSON^ files and a file looks like
-```{
-  "app": "What'sOn",
-  "exportedAt": "2026-11-22T01:18:24.305Z",
-  "username": "your-username",
-  "soundEnabled": false,
-  "dmHistory": {
-    "mintlabs": [],
-    "superb1oxd": [
-      {
-        "id": "msg-1795308937333-211",
-        "sender": "received",
-        "text": "`Hi!`",
-        "timestamp": "06:55 PM",
-        "reactions": {}
-      },
-      {
-        "id": "msg-1795308958066-19",
-        "sender": "sent",
-        "text": "Oh Hi! Links WOrk! https://shahadah-studs.github.io/Whats-on/",
-        "timestamp": "06:55 PM",
-        "status": "seen",
-        "reactions": {
-          "🎉": [
-            "superb1oxd"
-          ]
-        }
-      },
-      {
-        "id": "msg-1795308987368-812",
-        "sender": "sent",
-        "text": "Yep thans for the chat Im GOing offline",
-        "timestamp": "06:56 PM",
-        "status": "seen",
-        "reactions": {}
-      }
-    ]
-  }
-}
-```
+Open `backup.html` from the app to export or import What'sOn data.
+
+The backup may include:
+
+- The configured username
+- Notification sound preference
+- Saved direct-message history
+- Export timestamp
+
+Keep exported backups private because they can contain message history.
 
 ## Project Structure
 
@@ -168,6 +141,7 @@ Wave vault lets you **Download/Upload** BackUp ^JSON^ files and a file looks lik
 │   └── style.css     # Application styles
 ├── about.html        # About page
 ├── about.css         # About page styles
+├── backup.html       # WaveVault backup and restore page
 ├── index.html        # Main application page
 ├── package.json
 ├── tsconfig.json
@@ -176,15 +150,16 @@ Wave vault lets you **Download/Upload** BackUp ^JSON^ files and a file looks lik
 
 ## Privacy and Connectivity
 
-What'sOn is designed as a local-first, peer-to-peer application:
+What'sOn is a local-first, peer-to-peer application:
 
-- Messages and media are transferred directly over WebRTC connections.
+- Messages and media are transferred over WebRTC connections.
 - Browser local storage keeps usernames and conversation metadata on the current device.
 - Direct-message file data is subject to browser storage limits and the 10 MB transfer limit.
 - Strict firewalls or restrictive networks may block peer connections.
-- PeerJS requires signaling infrastructure to discover and establish peers, while active chat and media connections do not use an application database.
+- PeerJS signaling is used to discover and establish peers.
+- Active chat and media connections do not use an application database.
 
-WebRTC media and DTLS/SRTP provide transport security. This project should not be used for highly sensitive information without an independent security review.
+WebRTC provides encrypted media and DTLS/SRTP transport. This project should not be used for highly sensitive information without an independent security and signaling review.
 
 ## Deployment
 
@@ -198,7 +173,7 @@ For GitHub Pages:
 
 ## Contributing
 
-Contributions are welcome. Before submitting a change:
+Contributions are welcome.
 
 1. Fork the repository.
 2. Create a descriptive feature branch.
@@ -210,4 +185,5 @@ Contributions are welcome. Before submitting a change:
 No license has been specified for this repository. All rights are retained by the repository owner unless a license is added.
 
 ## Official Waver
-> waver-what-son-official 
+
+> `waver-what-son-official`
