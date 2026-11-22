@@ -6,10 +6,9 @@ export default defineConfig({
       input: {
         main: "index.html",
         about: "about.html",
-        drop: "drop.html"
+        drop: "drop.html",
         backup: "backup.html"
       }
     }
   }
 });
-
