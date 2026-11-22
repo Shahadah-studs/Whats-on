@@ -14,6 +14,9 @@ export interface ChatMessage {
   reactions?: Record<string, string[]>;
 }
 
+let scrollWatcherAttached = false;
+let jumpPillEl: HTMLButtonElement | null = null;
+
 export function getTimeNow(): string {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
@@ -22,6 +25,91 @@ export function escapeHtml(str: string): string {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+// Safely renders clickable URLs and `inline code` without XSS risk
+function formatRichMessageContent(rawText: string): HTMLSpanElement {
+  const wrapper = document.createElement("span");
+  wrapper.className = "msg-body-text";
+
+  const tokenRegex = /(`[^`]+`|https?:\/\/[^\s<]+)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null = null;
+
+  while ((match = tokenRegex.exec(rawText)) !== null) {
+    if (match.index > lastIndex) {
+      wrapper.appendChild(document.createTextNode(rawText.slice(lastIndex, match.index)));
+    }
+
+    const token = match[0];
+    if (token.charAt(0) === "`" && token.charAt(token.length - 1) === "`" && token.length > 2) {
+      const codeEl = document.createElement("code");
+      codeEl.className = "inline-code";
+      codeEl.textContent = token.slice(1, -1);
+      wrapper.appendChild(codeEl);
+    } else {
+      const linkEl = document.createElement("a");
+      linkEl.href = token;
+      linkEl.target = "_blank";
+      linkEl.rel = "noopener noreferrer";
+      linkEl.className = "chat-link";
+      linkEl.textContent = token;
+      wrapper.appendChild(linkEl);
+    }
+
+    lastIndex = tokenRegex.lastIndex;
+  }
+
+  if (lastIndex < rawText.length) {
+    wrapper.appendChild(document.createTextNode(rawText.slice(lastIndex)));
+  }
+
+  return wrapper;
+}
+
+// Smart Scroll Lock + "Jump to Latest" Floating Pill
+function ensureSmartScroll(container: HTMLDivElement) {
+  if (scrollWatcherAttached) return;
+  scrollWatcherAttached = true;
+
+  const chatArea = container.parentElement;
+  if (!chatArea) return;
+
+  const pill = document.createElement("button");
+  pill.type = "button";
+  pill.className = "jump-latest-btn hidden";
+  pill.textContent = "↓ New Messages";
+  pill.addEventListener("click", () => {
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    pill.classList.add("hidden");
+  });
+
+  chatArea.appendChild(pill);
+  jumpPillEl = pill;
+
+  container.addEventListener("scroll", () => {
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+    if (distanceFromBottom < 80) {
+      pill.classList.add("hidden");
+    }
+  });
+}
+
+function isNearBottom(container: HTMLDivElement): boolean {
+  const distanceFromBottom =
+    container.scrollHeight - container.scrollTop - container.clientHeight;
+  return distanceFromBottom < 110;
+}
+
+function handlePostAppendScroll(container: HTMLDivElement, wasNearBottom: boolean, forceScroll: boolean) {
+  ensureSmartScroll(container);
+  if (forceScroll || wasNearBottom) {
+    container.scrollTop = container.scrollHeight;
+    if (jumpPillEl) jumpPillEl.classList.add("hidden");
+  } else if (jumpPillEl) {
+    jumpPillEl.classList.remove("hidden");
+  }
 }
 
 export function playDropPing(soundEnabled: boolean) {
@@ -53,6 +141,7 @@ export function appendDmBubble(
   myUsername: string,
   onReactionClick: (messageId: string, emoji: string) => void
 ) {
+  const wasNearBottom = isNearBottom(container);
   const welcome = container.querySelector(".welcome-note");
   if (welcome) welcome.remove();
 
@@ -74,9 +163,7 @@ export function appendDmBubble(
     link.textContent = "📄 " + (msg.fileName || "Download File");
     bubble.appendChild(link);
   } else {
-    const textSpan = document.createElement("span");
-    textSpan.textContent = msg.text;
-    bubble.appendChild(textSpan);
+    bubble.appendChild(formatRichMessageContent(msg.text));
   }
 
   const meta = document.createElement("div");
@@ -105,7 +192,7 @@ export function appendDmBubble(
   );
 
   container.appendChild(bubble);
-  container.scrollTop = container.scrollHeight;
+  handlePostAppendScroll(container, wasNearBottom, msg.sender === "sent");
 }
 
 export function appendWaverBubble(
@@ -114,6 +201,7 @@ export function appendWaverBubble(
   myUsername: string,
   onReactionClick: (messageId: string, emoji: string) => void
 ) {
+  const wasNearBottom = isNearBottom(container);
   const welcome = container.querySelector(".welcome-note");
   if (welcome) welcome.remove();
 
@@ -128,9 +216,7 @@ export function appendWaverBubble(
     bubble.appendChild(senderTag);
   }
 
-  const textSpan = document.createElement("span");
-  textSpan.textContent = msg.text;
-  bubble.appendChild(textSpan);
+  bubble.appendChild(formatRichMessageContent(msg.text));
 
   const meta = document.createElement("div");
   meta.className = "msg-meta";
@@ -142,7 +228,7 @@ export function appendWaverBubble(
   );
 
   container.appendChild(bubble);
-  container.scrollTop = container.scrollHeight;
+  handlePostAppendScroll(container, wasNearBottom, isMine);
 }
 
 export function renderSavedContacts(
