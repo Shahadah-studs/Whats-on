@@ -7,6 +7,7 @@ export default defineConfig({
         main: "index.html",
         about: "about.html",
         drop: "drop.html"
+        backup: "backup.html"
       }
     }
   }
