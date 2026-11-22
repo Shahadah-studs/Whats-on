@@ -1,0 +1,236 @@
+:root {
+  --ocean-deep: #004e7c;
+  --ocean-mid: #0077b6;
+  --ocean-light: #e0f4fc;
+  --mint-green: #10b981;
+  --mint-soft: #d1fae5;
+  --white: #ffffff;
+  --bg-sand: #f4f9fc;
+  --text-dark: #0f293a;
+  --text-muted: #5c768d;
+  --border-color: #cde4f0;
+  --danger: #ef4444;
+  --danger-soft: #fee2e2;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, var(--ocean-deep) 0%, var(--ocean-mid) 100%);
+  min-height: 100vh;
+  padding: 24px 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  color: var(--text-dark);
+}
+
+.vault-shell {
+  width: 100%;
+  max-width: 840px;
+  background: var(--white);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 35, 60, 0.3);
+}
+
+.vault-header {
+  padding: 18px 24px;
+  background: var(--bg-sand);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ocean-deep);
+}
+
+.brand small {
+  font-size: 0.85rem;
+  color: var(--mint-green);
+  font-weight: 600;
+}
+
+.logo-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--mint-green), var(--ocean-mid));
+}
+
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-btn {
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: var(--ocean-light);
+  color: var(--ocean-deep);
+}
+
+.nav-btn.primary {
+  background: var(--mint-green);
+  color: var(--white);
+}
+
+.vault-content {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.stats-banner {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  background: linear-gradient(135deg, var(--ocean-light) 0%, #f0fdf9 100%);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.stat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.stat-box strong {
+  font-size: 1.2rem;
+  color: var(--ocean-deep);
+}
+
+.vault-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.vault-card {
+  background: var(--bg-sand);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card-icon {
+  font-size: 2rem;
+}
+
+.vault-card h2 {
+  font-size: 1.15rem;
+  color: var(--ocean-deep);
+}
+
+.vault-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.mint-btn {
+  background: var(--mint-green);
+  color: var(--white);
+}
+
+.ocean-btn {
+  background: var(--ocean-mid);
+  color: var(--white);
+}
+
+.outline-btn {
+  background: var(--white);
+  color: var(--ocean-deep);
+  border: 1px solid var(--border-color);
+}
+
+.danger-zone {
+  background: #fff8f8;
+  border: 1px solid #fecaca;
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.danger-zone h3 {
+  color: #991b1b;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.danger-zone p {
+  color: #7f1d1d;
+  font-size: 0.86rem;
+}
+
+.danger-btn {
+  background: var(--danger);
+  color: var(--white);
+}
+
+.toast {
+  background: var(--mint-soft);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-align: center;
+}
+
+.hidden {
+  display: none !important;
+}
