@@ -60,6 +60,7 @@
           <div class="id-actions">
             <small id="my-status-badge" class="badge offline">Offline</small>
             <button id="copy-btn" class="link-btn">Copy ID</button>
+          <button id="copy-invite-btn" class="link-btn">🔗 Invite Link</button>
           </div>
         </div>
 
@@ -231,6 +232,68 @@
             e.stopPropagation();
             adBanner.classList.add("hidden");
           });
+        }
+      })();
+    </script>
+    <script>
+      (function () {
+        // 1. Copy 1-Click Shareable Invite URL (?chat=username)
+        var inviteBtn = document.getElementById("copy-invite-btn");
+        var userInput = document.getElementById("username-input");
+
+        if (inviteBtn && userInput) {
+          inviteBtn.addEventListener("click", function () {
+            var myId = userInput.value.trim();
+            if (!myId) return;
+            var baseUrl = window.location.origin + window.location.pathname;
+            var inviteUrl = baseUrl + "?chat=" + encodeURIComponent(myId);
+            navigator.clipboard.writeText(inviteUrl);
+            inviteBtn.textContent = "Copied Link!";
+            setTimeout(function () {
+              inviteBtn.textContent = "🔗 Invite Link";
+            }, 1800);
+          });
+        }
+
+        // 2. Auto-Open DM (?chat=...) or Waver Room (?waver=...) when link is opened
+        var params = new URLSearchParams(window.location.search);
+        var targetChat = params.get("chat");
+        var targetWaver = params.get("waver");
+
+        if (targetChat || targetWaver) {
+          var badge = document.getElementById("my-status-badge");
+          var handled = false;
+
+          function triggerAutoConnect() {
+            if (handled) return;
+            if (!badge || badge.textContent !== "Online") return;
+            handled = true;
+
+            // Clean the URL bar so refreshing later doesn't re-trigger
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            if (targetChat) {
+              var peerInput = document.getElementById("peer-id-input");
+              var chatBtn = document.getElementById("connect-btn");
+              if (peerInput && chatBtn) {
+                peerInput.value = targetChat;
+                chatBtn.click();
+              }
+            } else if (targetWaver) {
+              var roomInput = document.getElementById("waver-room-input");
+              var joinBtn = document.getElementById("join-waver-btn");
+              if (roomInput && joinBtn) {
+                roomInput.value = targetWaver;
+                joinBtn.click();
+              }
+            }
+          }
+
+          if (badge) {
+            var obs = new MutationObserver(triggerAutoConnect);
+            obs.observe(badge, { childList: true, characterData: true, subtree: true });
+            setTimeout(triggerAutoConnect, 1200);
+          }
         }
       })();
     </script>
