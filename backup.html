@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Backup & Restore Vault | What'sOn</title>
+    <link rel="stylesheet" href="/src/backup.css" />
+  </head>
+  <body>
+    <div class="vault-shell">
+      <header class="vault-header">
+        <div class="brand">
+          <div class="logo-dot"></div>
+          <h1>WaveVault <small>by What'sOn</small></h1>
+        </div>
+        <div class="nav-links">
+          <a href="./index.html" class="nav-btn primary">← Messenger</a>
+          <a href="./about.html" class="nav-btn">About</a>
+        </div>
+      </header>
+
+      <main class="vault-content">
+        <!-- Current Storage Stats -->
+        <section class="stats-banner">
+          <div class="stat-box">
+            <span class="stat-label">Claimed Username</span>
+            <strong id="stat-username">Loading...</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Saved DM Contacts</span>
+            <strong id="stat-contacts">0</strong>
+          </div>
+          <div class="stat-box">
+            <span class="stat-label">Total Messages</span>
+            <strong id="stat-messages">0</strong>
+          </div>
+        </section>
+
+        <!-- Export & Import Cards -->
+        <div class="vault-grid">
+          <article class="vault-card">
+            <div class="card-icon">📤</div>
+            <h2>Export Backup (.json)</h2>
+            <p>
+              Download a portable JSON snapshot of your username, contacts, and all saved message histories to keep safe or move to another device.
+            </p>
+            <button id="export-json-btn" class="mint-btn">Download Backup File</button>
+          </article>
+
+          <article class="vault-card">
+            <div class="card-icon">📥</div>
+            <h2>Restore from Backup (.json)</h2>
+            <p>
+              Upload a previously exported <code>whatson-backup.json</code> file. You can merge it with your current chats or overwrite everything.
+            </p>
+            <input type="file" id="import-file-input" accept=".json,application/json" class="hidden" />
+            <div class="btn-group">
+              <button id="import-merge-btn" class="ocean-btn">Merge Backup</button>
+              <button id="import-replace-btn" class="outline-btn">Replace All</button>
+            </div>
+          </article>
+        </div>
+
+        <!-- Danger Zone -->
+        <section class="danger-zone">
+          <div>
+            <h3>Reset Local Storage</h3>
+            <p>Permanently clear your saved username and all DM histories from this browser.</p>
+          </div>
+          <button id="wipe-all-btn" class="danger-btn">🗑️ Wipe All Data</button>
+        </section>
+
+        <div id="vault-toast" class="toast hidden"></div>
+      </main>
+    </div>
+
+    <script type="module" src="/src/backup.ts"></script>
+  </body>
+</html>
