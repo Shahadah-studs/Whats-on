@@ -94,7 +94,7 @@ importReplaceBtn.addEventListener("click", () => {
 });
 
 importFileInput.addEventListener("change", () => {
-  const file = importFileInput.files && importFileInput.files;
+  const file = importFileInput.files ? importFileInput.files.item(0) : null;
   if (!file) return;
 
   const reader = new FileReader();
